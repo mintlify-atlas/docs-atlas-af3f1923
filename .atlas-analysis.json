@@ -1,0 +1,130 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "ČSFD API",
+  "projectDescription": "TypeScript library for scraping ČSFD.cz (Czech-Slovak Film Database) with MCP server support for AI integration.",
+  "theme": "sequoia",
+  "primaryColor": "#D32F2F",
+  "lightColor": "#FF5252",
+  "darkColor": "#B71C1C",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/movies",
+              "features/search",
+              "features/creators",
+              "features/user-ratings",
+              "features/user-reviews",
+              "features/cinema"
+            ]
+          },
+          {
+            "group": "CLI Tools",
+            "pages": [
+              "cli/overview",
+              "cli/export-ratings",
+              "cli/rest-server",
+              "cli/mcp-server"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/docker",
+              "advanced/mcp-integration",
+              "advanced/typescript-types",
+              "advanced/configuration"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/basic-usage",
+              "examples/filtering-ratings",
+              "examples/letterboxd-export",
+              "examples/browser-extensions"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core API",
+            "pages": [
+              "api/csfd-class",
+              "api/movie",
+              "api/search",
+              "api/creator",
+              "api/user-ratings",
+              "api/user-reviews",
+              "api/cinema"
+            ]
+          },
+          {
+            "group": "TypeScript Types",
+            "pages": [
+              "api/types/movie-types",
+              "api/types/search-types",
+              "api/types/creator-types",
+              "api/types/user-types",
+              "api/types/common-types"
+            ]
+          },
+          {
+            "group": "REST API",
+            "pages": [
+              "api/rest/endpoints",
+              "api/rest/authentication",
+              "api/rest/rate-limiting"
+            ]
+          },
+          {
+            "group": "MCP Server",
+            "pages": [
+              "api/mcp/tools",
+              "api/mcp/setup",
+              "api/mcp/claude-desktop"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "TypeScript-first with full type safety",
+    "Search movies, TV series, creators, and users",
+    "Fetch detailed movie information including ratings, cast, and crew",
+    "Access user ratings and reviews with pagination",
+    "Export data to CSV, JSON, or Letterboxd format",
+    "MCP server for AI integration (Claude Desktop)",
+    "REST API server for standalone deployment",
+    "Docker support with pre-built images",
+    "Homebrew installation for CLI tools",
+    "Works in Node.js, browsers, and serverless environments"
+  ],
+  "publicApiSurface": [
+    "csfd.movie(id: number): Promise<CSFDMovie>",
+    "csfd.search(query: string): Promise<CSFDSearch>",
+    "csfd.creator(id: number): Promise<CSFDCreator>",
+    "csfd.userRatings(userId: string | number, config?: CSFDUserRatingConfig): Promise<CSFDUserRatings[]>",
+    "csfd.userReviews(userId: string | number, config?: CSFDUserReviewsConfig): Promise<CSFDUserReviews[]>",
+    "csfd.cinema(district: number | string, period: CSFDCinemaPeriod): Promise<CSFDCinema[]>",
+    "CLI: node-csfd-api export ratings <userId> [--csv|--json|--letterboxd]",
+    "CLI: node-csfd-api server",
+    "CLI: node-csfd-api mcp"
+  ]
+}
