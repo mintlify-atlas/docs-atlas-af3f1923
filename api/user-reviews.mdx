@@ -1,0 +1,349 @@
+---
+title: 'userReviews()'
+description: 'Get detailed user reviews from their ČSFD profile'
+---
+
+The `userReviews()` method retrieves a user's written reviews from their ČSFD profile. Unlike ratings, reviews include the full review text and movie poster.
+
+## Signature
+
+```typescript
+csfd.userReviews(
+  user: string | number,
+  config?: CSFDUserReviewsConfig,
+  options?: CSFDOptions
+): Promise<CSFDUserReviews[]>
+```
+
+## Parameters
+
+<ParamField path="user" type="string | number" required>
+  User identifier. Can be:
+  - User ID as number: `195357`
+  - Username string: `'195357-verbal'`
+  - Username without ID: `'verbal'`
+  
+  You can find this in the user's profile URL:
+  `https://www.csfd.cz/uzivatel/195357-verbal/`
+</ParamField>
+
+<ParamField path="config" type="CSFDUserReviewsConfig" optional>
+  Configuration options for filtering and pagination
+  
+  <Expandable title="properties">
+    <ParamField path="page" type="number" optional>
+      Specific page number to fetch (default: 1)
+    </ParamField>
+    
+    <ParamField path="allPages" type="boolean" optional>
+      Fetch all review pages (default: false)
+      
+      <Warning>
+        Use with caution! Set `allPagesDelay` to avoid rate limiting.
+      </Warning>
+    </ParamField>
+    
+    <ParamField path="allPagesDelay" type="number" optional>
+      Delay between page requests in milliseconds (default: 0)
+      
+      Recommended: 2000-5000ms when using `allPages: true`
+    </ParamField>
+    
+    <ParamField path="includesOnly" type="CSFDFilmTypes[]" optional>
+      Include only specific content types
+      
+      Available types: 'film', 'series', 'tv-film', 'tv-show', 'episode', 'season', 'theatrical', 'concert', 'student-film', 'amateur-film', 'music-video', 'video-compilation'
+    </ParamField>
+    
+    <ParamField path="excludes" type="CSFDFilmTypes[]" optional>
+      Exclude specific content types
+      
+      <Note>
+        `includesOnly` and `excludes` are mutually exclusive. If both are provided, `includesOnly` takes precedence.
+      </Note>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="options" type="CSFDOptions" optional>
+  Override default options for this request
+  
+  <Expandable title="properties">
+    <ParamField path="language" type="'cs' | 'en' | 'sk'" optional>
+      Preferred language for content (default: 'cs')
+    </ParamField>
+    
+    <ParamField path="request" type="RequestInit" optional>
+      Custom fetch request options (headers, timeout, etc.)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+<ResponseField name="CSFDUserReviews[]" type="array">
+  Array of user reviews
+  
+  <Expandable title="review properties">
+    <ResponseField name="id" type="number">
+      Movie ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string">
+      Movie title
+    </ResponseField>
+    
+    <ResponseField name="year" type="number">
+      Release year
+    </ResponseField>
+    
+    <ResponseField name="url" type="string">
+      Full URL to the movie page
+    </ResponseField>
+    
+    <ResponseField name="type" type="CSFDFilmTypes">
+      Content type (e.g., 'film', 'series', 'episode')
+    </ResponseField>
+    
+    <ResponseField name="colorRating" type="'bad' | 'average' | 'good' | 'unknown'">
+      Overall ČSFD rating indicator
+    </ResponseField>
+    
+    <ResponseField name="userRating" type="0 | 1 | 2 | 3 | 4 | 5">
+      User's star rating (0-5)
+    </ResponseField>
+    
+    <ResponseField name="userDate" type="string | null">
+      Date when the review was written (format: DD.MM.YYYY)
+    </ResponseField>
+    
+    <ResponseField name="text" type="string">
+      Full review text written by the user
+    </ResponseField>
+    
+    <ResponseField name="poster" type="string">
+      URL to the movie poster image
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+### Basic Usage
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+// Get latest reviews
+const reviews = await csfd.userReviews(195357);
+
+reviews.forEach(review => {
+  console.log(`${review.title} (${review.year})`);
+  console.log(`Rating: ${review.userRating}/5`);
+  console.log(`Review: ${review.text}`);
+  console.log('---');
+});
+```
+
+### Get Specific Page
+
+```typescript
+// Get second page of reviews
+const page2 = await csfd.userReviews('195357-verbal', { page: 2 });
+
+// Get third page
+const page3 = await csfd.userReviews('195357-verbal', { page: 3 });
+```
+
+### Fetch All Reviews with Rate Limiting
+
+```typescript
+// Fetch all reviews with 2-second delay between requests
+const allReviews = await csfd.userReviews('195357-verbal', {
+  allPages: true,
+  allPagesDelay: 2000 // 2 seconds between requests
+});
+
+console.log(`User has written ${allReviews.length} reviews`);
+```
+
+### Filter by Content Type
+
+```typescript
+// Get only movie reviews (exclude series, episodes, etc.)
+const onlyMovies = await csfd.userReviews('195357-verbal', {
+  includesOnly: ['film']
+});
+
+// Get reviews for films and TV films
+const moviesAndTvFilms = await csfd.userReviews('195357-verbal', {
+  includesOnly: ['film', 'tv-film']
+});
+
+// Exclude episode reviews
+const noEpisodes = await csfd.userReviews('195357-verbal', {
+  excludes: ['episode', 'season']
+});
+```
+
+### Display Reviews with Posters
+
+```typescript
+const reviews = await csfd.userReviews(195357);
+
+reviews.forEach(review => {
+  console.log(`\n${review.title} (${review.year})`);
+  console.log(`Poster: ${review.poster}`);
+  console.log(`Rating: ${'⭐'.repeat(review.userRating)}`);
+  console.log(`Date: ${review.userDate}`);
+  console.log(`\nReview:\n${review.text}`);
+  console.log('\n' + '='.repeat(50));
+});
+```
+
+### Find Reviews by Rating
+
+```typescript
+const reviews = await csfd.userReviews('195357-verbal');
+
+// Get 5-star reviews only
+const topReviews = reviews.filter(r => r.userRating === 5);
+
+console.log('Movies the user loved:');
+topReviews.forEach(review => {
+  console.log(`  - ${review.title}: ${review.text.substring(0, 100)}...`);
+});
+
+// Get negative reviews (1-2 stars)
+const negativeReviews = reviews.filter(r => r.userRating <= 2);
+```
+
+### Search Review Text
+
+```typescript
+const reviews = await csfd.userReviews('195357-verbal', {
+  allPages: true,
+  allPagesDelay: 2000
+});
+
+// Find reviews mentioning specific keywords
+const keyword = 'výborný';
+const matching = reviews.filter(r => 
+  r.text.toLowerCase().includes(keyword.toLowerCase())
+);
+
+console.log(`Found ${matching.length} reviews mentioning "${keyword}"`);
+```
+
+### Export Reviews to Markdown
+
+```typescript
+import { csfd } from 'node-csfd-api';
+import { writeFileSync } from 'fs';
+
+async function exportReviewsToMarkdown(userId: string) {
+  const reviews = await csfd.userReviews(userId, {
+    allPages: true,
+    allPagesDelay: 2000
+  });
+  
+  const markdown = [
+    '# My ČSFD Reviews',
+    '',
+    ...reviews.map(r => `
+## ${r.title} (${r.year})
+
+**Rating:** ${'⭐'.repeat(r.userRating)}
+**Date:** ${r.userDate}
+**URL:** ${r.url}
+
+![Poster](${r.poster})
+
+${r.text}
+
+---
+`)
+  ].join('\n');
+  
+  writeFileSync(`${userId}-reviews.md`, markdown);
+  console.log(`Exported ${reviews.length} reviews`);
+}
+
+await exportReviewsToMarkdown('195357-verbal');
+```
+
+### Calculate Review Statistics
+
+```typescript
+const reviews = await csfd.userReviews(195357, {
+  allPages: true,
+  allPagesDelay: 2000
+});
+
+// Average review length
+const avgLength = reviews.reduce((sum, r) => 
+  sum + r.text.length, 0
+) / reviews.length;
+
+// Longest review
+const longest = reviews.reduce((prev, current) => 
+  current.text.length > prev.text.length ? current : prev
+);
+
+console.log(`Total reviews: ${reviews.length}`);
+console.log(`Average length: ${Math.round(avgLength)} characters`);
+console.log(`Longest review: ${longest.title} (${longest.text.length} chars)`);
+```
+
+### Compare with Ratings
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+const userId = '195357-verbal';
+
+// Get both ratings and reviews
+const [ratings, reviews] = await Promise.all([
+  csfd.userRatings(userId),
+  csfd.userReviews(userId)
+]);
+
+console.log(`Total ratings: ${ratings.length}`);
+console.log(`Written reviews: ${reviews.length}`);
+console.log(`Review percentage: ${((reviews.length / ratings.length) * 100).toFixed(1)}%`);
+```
+
+### Using Different User ID Formats
+
+```typescript
+// All of these are valid:
+const reviews1 = await csfd.userReviews(195357);
+const reviews2 = await csfd.userReviews('195357');
+const reviews3 = await csfd.userReviews('195357-verbal');
+```
+
+## Rate Limiting
+
+<Warning>
+  When using `allPages: true`, ČSFD may detect automated requests and temporarily block your IP. Always use `allPagesDelay` with a reasonable value (2000-5000ms recommended).
+</Warning>
+
+```typescript
+// Good - with delay
+const reviews = await csfd.userReviews('195357-verbal', {
+  allPages: true,
+  allPagesDelay: 3000 // 3 seconds
+});
+
+// Bad - no delay (may get blocked)
+const reviews = await csfd.userReviews('195357-verbal', {
+  allPages: true
+});
+```
+
+## Related
+
+- [CSFDUserReviews Type](/api/types/user-types)
+- [CSFDUserReviewsConfig Type](/api/types/user-types)
+- [CSFDFilmTypes](/api/types/common-types)
+- [userRatings()](/api/user-ratings) - Get user ratings without review text

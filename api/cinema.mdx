@@ -1,0 +1,331 @@
+---
+title: 'cinema()'
+description: 'Get cinema showtimes for a specific district and time period'
+---
+
+The `cinema()` method retrieves cinema information and movie showtimes for a specific district in Czech Republic or Slovakia.
+
+## Signature
+
+```typescript
+csfd.cinema(
+  district: number | string,
+  period: CSFDCinemaPeriod,
+  options?: CSFDOptions
+): Promise<CSFDCinema[]>
+```
+
+## Parameters
+
+<ParamField path="district" type="number | string" required>
+  District identifier. This is the ČSFD district code.
+  
+  Examples:
+  - Prague: Use the appropriate district code
+  - Brno: Use the appropriate district code
+  
+  You can find district codes in cinema URLs on ČSFD.
+</ParamField>
+
+<ParamField path="period" type="CSFDCinemaPeriod" required>
+  Time period for showtimes. Available values:
+  - `'today'` - Today's showtimes
+  - `'tomorrow'` - Tomorrow's showtimes
+  - `'weekend'` - Weekend showtimes
+  - `'week'` - This week's showtimes
+  - `'month'` - This month's showtimes
+</ParamField>
+
+<ParamField path="options" type="CSFDOptions" optional>
+  Override default options for this request
+  
+  <Expandable title="properties">
+    <ParamField path="language" type="'cs' | 'en' | 'sk'" optional>
+      Preferred language for content (default: 'cs')
+    </ParamField>
+    
+    <ParamField path="request" type="RequestInit" optional>
+      Custom fetch request options (headers, timeout, etc.)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+<ResponseField name="CSFDCinema[]" type="array">
+  Array of cinemas with their showtimes
+  
+  <Expandable title="cinema properties">
+    <ResponseField name="id" type="number">
+      Cinema ID
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Cinema name
+    </ResponseField>
+    
+    <ResponseField name="city" type="string">
+      City where the cinema is located
+    </ResponseField>
+    
+    <ResponseField name="url" type="string">
+      Full URL to the cinema page on ČSFD
+    </ResponseField>
+    
+    <ResponseField name="region" type="string" optional>
+      Region name (if available)
+    </ResponseField>
+    
+    <ResponseField name="coords" type="object">
+      Geographic coordinates
+      
+      <Expandable title="properties">
+        <ResponseField name="lat" type="number">
+          Latitude
+        </ResponseField>
+        <ResponseField name="lng" type="number">
+          Longitude
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="screenings" type="CSFDCinemaGroupedFilmsByDate[]">
+      Showtimes grouped by date
+      
+      <Expandable title="screening properties">
+        <ResponseField name="date" type="string">
+          Screening date
+        </ResponseField>
+        
+        <ResponseField name="films" type="CSFDCinemaMovie[]">
+          Movies showing on this date
+          
+          <Expandable title="film properties">
+            <ResponseField name="id" type="number">
+              Movie ID
+            </ResponseField>
+            
+            <ResponseField name="title" type="string">
+              Movie title
+            </ResponseField>
+            
+            <ResponseField name="url" type="string">
+              Full URL to the movie page
+            </ResponseField>
+            
+            <ResponseField name="showTimes" type="string[]">
+              Array of showtimes (e.g., ['14:00', '17:30', '20:15'])
+            </ResponseField>
+            
+            <ResponseField name="meta" type="string[]">
+              Screening metadata (e.g., 'dubbing', '3D', 'subtitles')
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+### Basic Usage
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+// Get today's showtimes for a district
+const cinemas = await csfd.cinema(1, 'today');
+
+cinemas.forEach(cinema => {
+  console.log(`${cinema.name} - ${cinema.city}`);
+  console.log(`Location: ${cinema.coords.lat}, ${cinema.coords.lng}`);
+});
+```
+
+### Display All Showtimes
+
+```typescript
+const cinemas = await csfd.cinema(1, 'today');
+
+cinemas.forEach(cinema => {
+  console.log(`\n${cinema.name}`);
+  console.log(`${cinema.city}`);
+  console.log(`${cinema.url}\n`);
+  
+  cinema.screenings.forEach(screening => {
+    console.log(`  ${screening.date}:`);
+    
+    screening.films.forEach(film => {
+      console.log(`    ${film.title}`);
+      console.log(`      Times: ${film.showTimes.join(', ')}`);
+      
+      if (film.meta.length > 0) {
+        console.log(`      Info: ${film.meta.join(', ')}`);
+      }
+    });
+  });
+});
+```
+
+### Weekend Showtimes
+
+```typescript
+// Get weekend showtimes
+const cinemas = await csfd.cinema(1, 'weekend');
+
+console.log(`Found ${cinemas.length} cinemas with weekend showtimes`);
+```
+
+### Filter by Movie
+
+```typescript
+const cinemas = await csfd.cinema(1, 'today');
+const movieTitle = 'Oppenheimer';
+
+// Find all cinemas showing a specific movie
+const cinemasWithMovie = cinemas.filter(cinema => 
+  cinema.screenings.some(screening => 
+    screening.films.some(film => 
+      film.title.includes(movieTitle)
+    )
+  )
+);
+
+console.log(`${movieTitle} is showing at ${cinemasWithMovie.length} cinemas`);
+
+cinemasWithMovie.forEach(cinema => {
+  console.log(`\n${cinema.name}:`);
+  
+  cinema.screenings.forEach(screening => {
+    const matchingFilms = screening.films.filter(f => 
+      f.title.includes(movieTitle)
+    );
+    
+    matchingFilms.forEach(film => {
+      console.log(`  ${screening.date}: ${film.showTimes.join(', ')}`);
+    });
+  });
+});
+```
+
+### Find 3D Screenings
+
+```typescript
+const cinemas = await csfd.cinema(1, 'week');
+
+// Find all 3D screenings
+cinemas.forEach(cinema => {
+  const has3D = cinema.screenings.some(screening => 
+    screening.films.some(film => 
+      film.meta.includes('3D')
+    )
+  );
+  
+  if (has3D) {
+    console.log(`\n${cinema.name} has 3D screenings:`);
+    
+    cinema.screenings.forEach(screening => {
+      screening.films
+        .filter(film => film.meta.includes('3D'))
+        .forEach(film => {
+          console.log(`  ${film.title} - ${screening.date}`);
+          console.log(`    ${film.showTimes.join(', ')}`);
+        });
+    });
+  }
+});
+```
+
+### Get Movie Details from Screening
+
+```typescript
+const cinemas = await csfd.cinema(1, 'today');
+
+// Get details for the first movie in the first cinema
+if (cinemas.length > 0 && cinemas[0].screenings.length > 0) {
+  const firstFilm = cinemas[0].screenings[0].films[0];
+  
+  // Fetch full movie details
+  const movieDetails = await csfd.movie(firstFilm.id);
+  
+  console.log(`Now showing: ${movieDetails.title}`);
+  console.log(`Rating: ${movieDetails.rating}%`);
+  console.log(`Genres: ${movieDetails.genres.join(', ')}`);
+}
+```
+
+### Create Cinema Map Data
+
+```typescript
+const cinemas = await csfd.cinema(1, 'today');
+
+// Prepare data for map visualization
+const mapData = cinemas.map(cinema => ({
+  name: cinema.name,
+  city: cinema.city,
+  latitude: cinema.coords.lat,
+  longitude: cinema.coords.lng,
+  url: cinema.url,
+  movieCount: cinema.screenings.reduce(
+    (sum, s) => sum + s.films.length, 0
+  )
+}));
+
+console.log(JSON.stringify(mapData, null, 2));
+```
+
+### Different Time Periods
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+const districtId = 1;
+
+// Today
+const today = await csfd.cinema(districtId, 'today');
+console.log(`Today: ${today.length} cinemas`);
+
+// Tomorrow
+const tomorrow = await csfd.cinema(districtId, 'tomorrow');
+console.log(`Tomorrow: ${tomorrow.length} cinemas`);
+
+// Weekend
+const weekend = await csfd.cinema(districtId, 'weekend');
+console.log(`Weekend: ${weekend.length} cinemas`);
+
+// This week
+const week = await csfd.cinema(districtId, 'week');
+console.log(`This week: ${week.length} cinemas`);
+
+// This month
+const month = await csfd.cinema(districtId, 'month');
+console.log(`This month: ${month.length} cinemas`);
+```
+
+### Find Nearest Showtime
+
+```typescript
+const cinemas = await csfd.cinema(1, 'today');
+const currentTime = new Date().toTimeString().substring(0, 5); // e.g., "14:30"
+
+cinemas.forEach(cinema => {
+  cinema.screenings.forEach(screening => {
+    screening.films.forEach(film => {
+      // Find next available showtime
+      const nextShowtime = film.showTimes.find(time => time > currentTime);
+      
+      if (nextShowtime) {
+        console.log(`${film.title} at ${cinema.name}: ${nextShowtime}`);
+      }
+    });
+  });
+});
+```
+
+## Related
+
+- [CSFDCinema Type](/api/types/common-types)
+- [CSFDCinemaPeriod Type](/api/types/common-types)
+- [CSFDOptions Type](/api/types/common-types)
+- [movie()](/api/movie) - Get movie details from screening

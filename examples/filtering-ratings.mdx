@@ -1,0 +1,375 @@
+---
+title: Filtering User Ratings
+description: Advanced filtering, pagination, and rate limiting for user ratings
+---
+
+The `userRatings()` method provides powerful filtering options to help you fetch exactly the data you need. This guide covers all available options with real examples.
+
+## UserRatingsOptions Interface
+
+The `UserRatingsOptions` interface provides the following configuration:
+
+```typescript
+interface UserRatingsOptions {
+  includesOnly?: CSFDFilmTypes[];  // Include only specific types
+  exclude?: CSFDFilmTypes[];       // Exclude specific types
+  allPages?: boolean;              // Fetch all pages
+  allPagesDelay?: number;          // Delay between requests (ms)
+  page?: number;                   // Fetch specific page
+}
+```
+
+<Note>
+**Type Safety**: All options are optional and fully typed with TypeScript.
+</Note>
+
+## Available Film Types
+
+The `CSFDFilmTypes` includes these values:
+
+- `film` - Movies
+- `tv-film` - TV movies
+- `tv-show` - TV shows
+- `series` - TV series
+- `theatrical` - Theatrical performances
+- `concert` - Concerts
+- `season` - TV seasons
+- `student-film` - Student films
+- `amateur-film` - Amateur films
+- `music-video` - Music videos
+- `episode` - TV episodes
+- `video-compilation` - Video compilations
+
+## Basic Usage
+
+### Fetch Default Page
+
+Without any options, `userRatings()` returns the last page (~50 items):
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+const ratings = await csfd.userRatings('912-bart');
+console.log(`Found ${ratings.length} ratings`);
+```
+
+## Filtering by Content Type
+
+### Include Only Specific Types
+
+Use `includesOnly` to fetch only specific content types:
+
+<CodeGroup>
+```typescript Movies Only
+import { csfd } from 'node-csfd-api';
+
+// Get only movies
+const onlyMovies = await csfd.userRatings('912-bart', {
+  includesOnly: ['film']
+});
+
+console.log(`Found ${onlyMovies.length} movies`);
+```
+
+```typescript TV Series Only
+import { csfd } from 'node-csfd-api';
+
+// Get only TV series
+const onlySeries = await csfd.userRatings('912-bart', {
+  includesOnly: ['series']
+});
+
+console.log(`Found ${onlySeries.length} TV series`);
+```
+
+```typescript Multiple Types
+import { csfd } from 'node-csfd-api';
+
+// Get movies and TV series
+const moviesAndSeries = await csfd.userRatings('912-bart', {
+  includesOnly: ['film', 'series', 'tv-film']
+});
+
+console.log(`Found ${moviesAndSeries.length} items`);
+```
+</CodeGroup>
+
+### Exclude Specific Types
+
+Use `exclude` to filter out unwanted content types:
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+// Get everything except episodes and seasons
+const excludeEpisodes = await csfd.userRatings('912-bart', {
+  exclude: ['episode', 'season']
+});
+
+console.log(`Found ${excludeEpisodes.length} ratings`);
+```
+
+<Warning>
+**Mutually Exclusive**: `includesOnly` and `exclude` cannot be used together. If both are provided, `includesOnly` takes precedence and `exclude` is ignored.
+
+```typescript
+// ❌ Bad: Both options provided
+await csfd.userRatings('912', {
+  includesOnly: ['film'],
+  exclude: ['episode']  // This will be ignored!
+});
+
+// ✅ Good: Use only one
+await csfd.userRatings('912', {
+  includesOnly: ['film', 'series']
+});
+```
+</Warning>
+
+## Pagination
+
+### Fetch Specific Page
+
+Use the `page` option to fetch a specific page number:
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+// Get page 2
+const page2 = await csfd.userRatings('912-bart', { 
+  page: 2 
+});
+
+// Get page 5
+const page5 = await csfd.userRatings('912-bart', { 
+  page: 5 
+});
+
+console.log(`Page 2: ${page2.length} ratings`);
+console.log(`Page 5: ${page5.length} ratings`);
+```
+
+### Fetch All Pages
+
+Use `allPages: true` to automatically fetch all pages:
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+// Fetch all ratings (use with caution!)
+const allRatings = await csfd.userRatings('912-bart', {
+  allPages: true
+});
+
+console.log(`Total ratings: ${allRatings.length}`);
+```
+
+<Warning>
+**Rate Limiting Risk**: Fetching all pages without delays can trigger anti-scraping measures. Always use `allPagesDelay` when setting `allPages: true`.
+</Warning>
+
+## Rate Limiting Best Practices
+
+### Adding Delays Between Requests
+
+Use `allPagesDelay` to add a delay (in milliseconds) between page requests:
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+const allRatings = await csfd.userRatings('912-bart', {
+  allPages: true,
+  allPagesDelay: 2000  // 2 second delay between requests
+});
+
+console.log(`Fetched ${allRatings.length} ratings with rate limiting`);
+```
+
+<Steps>
+  <Step title="Small datasets (< 100 pages)">
+    Use a delay of **1000-2000ms** (1-2 seconds):
+    ```typescript
+    { allPages: true, allPagesDelay: 1500 }
+    ```
+  </Step>
+  
+  <Step title="Medium datasets (100-500 pages)">
+    Use a delay of **2000-3000ms** (2-3 seconds):
+    ```typescript
+    { allPages: true, allPagesDelay: 2500 }
+    ```
+  </Step>
+  
+  <Step title="Large datasets (> 500 pages)">
+    Use a delay of **3000-5000ms** (3-5 seconds) or implement exponential backoff:
+    ```typescript
+    { allPages: true, allPagesDelay: 4000 }
+    ```
+  </Step>
+</Steps>
+
+### Recommended Approach for Large Datasets
+
+For large datasets, fetch pages manually with custom logic:
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+async function fetchAllRatingsWithBackoff(userId: string) {
+  let allRatings = [];
+  let page = 1;
+  let hasMore = true;
+  let delay = 1000;
+
+  while (hasMore) {
+    try {
+      console.log(`Fetching page ${page}...`);
+      const ratings = await csfd.userRatings(userId, { page });
+      
+      if (ratings.length === 0) {
+        hasMore = false;
+      } else {
+        allRatings = [...allRatings, ...ratings];
+        page++;
+        
+        // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay = Math.min(delay * 1.2, 5000); // Max 5 seconds
+      }
+    } catch (error) {
+      console.error(`Error on page ${page}:`, error);
+      // Increase delay on error
+      delay = Math.min(delay * 2, 10000);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  return allRatings;
+}
+
+const ratings = await fetchAllRatingsWithBackoff('912-bart');
+console.log(`Total: ${ratings.length} ratings`);
+```
+
+<Tip>
+**Best Practice**: For production applications, implement exponential backoff and respect rate limits to avoid being blocked.
+</Tip>
+
+## Complete Examples
+
+### Example 1: Export All Movies to JSON
+
+```typescript
+import { csfd } from 'node-csfd-api';
+import { writeFile } from 'fs/promises';
+
+const userId = '912';
+
+// Fetch all movie ratings
+const ratings = await csfd.userRatings(userId, {
+  includesOnly: ['film'],
+  allPages: true,
+  allPagesDelay: 2000
+});
+
+// Save to JSON file
+await writeFile(
+  `${userId}-movies.json`, 
+  JSON.stringify(ratings, null, 2)
+);
+
+console.log(`✅ Saved ${ratings.length} movie ratings to ${userId}-movies.json`);
+```
+
+### Example 2: Filter and Count by Rating
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+const ratings = await csfd.userRatings('912-bart', {
+  includesOnly: ['film'],
+  allPages: true,
+  allPagesDelay: 2000
+});
+
+// Group by rating
+const byRating = ratings.reduce((acc, rating) => {
+  const stars = rating.userRating;
+  acc[stars] = (acc[stars] || 0) + 1;
+  return acc;
+}, {} as Record<number, number>);
+
+console.log('Ratings distribution:');
+for (let i = 5; i >= 1; i--) {
+  const count = byRating[i] || 0;
+  const percentage = ((count / ratings.length) * 100).toFixed(1);
+  console.log(`${i} stars: ${count} (${percentage}%)`);
+}
+```
+
+### Example 3: Recent 5-Star Movies
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+const ratings = await csfd.userRatings('912-bart', {
+  includesOnly: ['film']
+});
+
+// Filter 5-star ratings
+const fiveStars = ratings.filter(r => r.userRating === 5);
+
+console.log('Recent 5-star movies:');
+fiveStars.forEach(movie => {
+  console.log(`- ${movie.title} (${movie.year}) - ${movie.userDate}`);
+});
+```
+
+## Combining Filters with User Reviews
+
+The same options work for `userReviews()`:
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+// Get all movie reviews
+const reviews = await csfd.userReviews('195357', {
+  includesOnly: ['film'],
+  allPages: true,
+  allPagesDelay: 2000
+});
+
+console.log(`Total reviews: ${reviews.length}`);
+reviews.forEach(review => {
+  console.log(`${review.title} - Rating: ${review.userRating}/5`);
+  console.log(`Review: ${review.text.substring(0, 100)}...\n`);
+});
+```
+
+## Data Structure
+
+Each rating object contains:
+
+```typescript
+interface CSFDUserRatings {
+  id: number;              // Movie/series ID
+  title: string;           // Title
+  year: number;            // Release year
+  type: CSFDFilmTypes;     // Content type
+  url: string;             // ČSFD URL
+  colorRating: string;     // 'good' | 'average' | 'bad' | 'unknown'
+  userDate: string;        // Date rated (e.g., "01.11.2020")
+  userRating: number;      // User's rating 0-5
+}
+```
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="Letterboxd Export" icon="download" href="/examples/letterboxd-export">
+    Export ratings to Letterboxd CSV format
+  </Card>
+  <Card title="API Reference" icon="book" href="/api/user-ratings">
+    Complete userRatings() documentation
+  </Card>
+</CardGroup>

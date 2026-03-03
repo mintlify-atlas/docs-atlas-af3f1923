@@ -1,0 +1,135 @@
+---
+title: 'Csfd Class'
+description: 'Main class for interacting with the ČSFD API'
+---
+
+The `Csfd` class is the primary interface for accessing ČSFD data. It provides methods to fetch movies, search content, retrieve creator information, and access user data.
+
+## Import
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+// Or create a custom instance
+import { Csfd } from 'node-csfd-api';
+```
+
+## Default Instance
+
+The library exports a pre-configured `csfd` instance that you can use immediately:
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+const movie = await csfd.movie(535121);
+```
+
+## Constructor
+
+While you typically use the default `csfd` instance, you can create a custom instance with default options:
+
+```typescript
+new Csfd(
+  userRatingsService,
+  userReviewsService,
+  movieService,
+  creatorService,
+  searchService,
+  cinemaService,
+  defaultOptions?
+)
+```
+
+<ParamField path="defaultOptions" type="CSFDOptions" optional>
+  Default options applied to all API calls
+  
+  <Expandable title="properties">
+    <ParamField path="language" type="'cs' | 'en' | 'sk'" optional>
+      Preferred language for content (default: 'cs')
+    </ParamField>
+    
+    <ParamField path="request" type="RequestInit" optional>
+      Custom fetch request options (headers, timeout, etc.)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Methods
+
+### setOptions()
+
+Update the default options for all subsequent API calls.
+
+```typescript
+csfd.setOptions({
+  language: 'en',
+  request: {
+    headers: {
+      'User-Agent': 'MyApp/1.0'
+    }
+  }
+});
+```
+
+<ParamField path="options" type="CSFDOptions" required>
+  Options to set
+  
+  <Expandable title="properties">
+    <ParamField path="language" type="'cs' | 'en' | 'sk'" optional>
+      Preferred language for content
+    </ParamField>
+    
+    <ParamField path="request" type="RequestInit" optional>
+      Custom fetch request options
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Available Methods
+
+The `Csfd` class provides the following methods to interact with ČSFD data:
+
+<CardGroup cols={2}>
+  <Card title="movie()" icon="film" href="/api/movie">
+    Get detailed information about a movie or TV series
+  </Card>
+  
+  <Card title="search()" icon="magnifying-glass" href="/api/search">
+    Search for movies, TV series, creators, and users
+  </Card>
+  
+  <Card title="creator()" icon="user" href="/api/creator">
+    Get creator biography and filmography
+  </Card>
+  
+  <Card title="userRatings()" icon="star" href="/api/user-ratings">
+    Retrieve user ratings from their profile
+  </Card>
+  
+  <Card title="userReviews()" icon="message" href="/api/user-reviews">
+    Get user reviews from their profile
+  </Card>
+  
+  <Card title="cinema()" icon="building" href="/api/cinema">
+    Get cinema showtimes for a district
+  </Card>
+</CardGroup>
+
+## Example
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+// Set default language
+csfd.setOptions({ language: 'en' });
+
+// All methods will now use English when available
+const movie = await csfd.movie(535121);
+const results = await csfd.search('Tarantino');
+const creator = await csfd.creator(2120);
+```
+
+## Related Types
+
+- [CSFDOptions](/api/types/common-types)
+- [CSFDLanguage](/api/types/common-types)

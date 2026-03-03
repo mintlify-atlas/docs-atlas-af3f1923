@@ -1,0 +1,276 @@
+---
+title: 'userRatings()'
+description: 'Retrieve user ratings from their ČSFD profile'
+---
+
+The `userRatings()` method fetches a user's movie and TV series ratings from their ČSFD profile. It supports pagination, filtering, and bulk fetching.
+
+## Signature
+
+```typescript
+csfd.userRatings(
+  user: string | number,
+  config?: CSFDUserRatingConfig,
+  options?: CSFDOptions
+): Promise<CSFDUserRatings[]>
+```
+
+## Parameters
+
+<ParamField path="user" type="string | number" required>
+  User identifier. Can be:
+  - User ID as number: `912`
+  - Username string: `'912-bart'`
+  - Username without ID: `'bart'`
+  
+  You can find this in the user's profile URL:
+  `https://www.csfd.cz/uzivatel/912-bart/`
+</ParamField>
+
+<ParamField path="config" type="CSFDUserRatingConfig" optional>
+  Configuration options for filtering and pagination
+  
+  <Expandable title="properties">
+    <ParamField path="page" type="number" optional>
+      Specific page number to fetch (default: 1)
+    </ParamField>
+    
+    <ParamField path="allPages" type="boolean" optional>
+      Fetch all rating pages (default: false)
+      
+      <Warning>
+        Use with caution! Set `allPagesDelay` to avoid rate limiting.
+      </Warning>
+    </ParamField>
+    
+    <ParamField path="allPagesDelay" type="number" optional>
+      Delay between page requests in milliseconds (default: 0)
+      
+      Recommended: 2000-5000ms when using `allPages: true`
+    </ParamField>
+    
+    <ParamField path="includesOnly" type="CSFDFilmTypes[]" optional>
+      Include only specific content types
+      
+      Available types: 'film', 'series', 'tv-film', 'tv-show', 'episode', 'season', 'theatrical', 'concert', 'student-film', 'amateur-film', 'music-video', 'video-compilation'
+    </ParamField>
+    
+    <ParamField path="excludes" type="CSFDFilmTypes[]" optional>
+      Exclude specific content types
+      
+      <Note>
+        `includesOnly` and `excludes` are mutually exclusive. If both are provided, `includesOnly` takes precedence.
+      </Note>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="options" type="CSFDOptions" optional>
+  Override default options for this request
+  
+  <Expandable title="properties">
+    <ParamField path="language" type="'cs' | 'en' | 'sk'" optional>
+      Preferred language for content (default: 'cs')
+    </ParamField>
+    
+    <ParamField path="request" type="RequestInit" optional>
+      Custom fetch request options (headers, timeout, etc.)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+<ResponseField name="CSFDUserRatings[]" type="array">
+  Array of user ratings
+  
+  <Expandable title="rating properties">
+    <ResponseField name="id" type="number">
+      Movie ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string">
+      Movie title
+    </ResponseField>
+    
+    <ResponseField name="year" type="number">
+      Release year
+    </ResponseField>
+    
+    <ResponseField name="url" type="string">
+      Full URL to the movie page
+    </ResponseField>
+    
+    <ResponseField name="type" type="CSFDFilmTypes">
+      Content type (e.g., 'film', 'series', 'episode')
+    </ResponseField>
+    
+    <ResponseField name="colorRating" type="'bad' | 'average' | 'good' | 'unknown'">
+      Overall ČSFD rating indicator
+    </ResponseField>
+    
+    <ResponseField name="userRating" type="0 | 1 | 2 | 3 | 4 | 5">
+      User's star rating (0-5)
+    </ResponseField>
+    
+    <ResponseField name="userDate" type="string">
+      Date when the user rated the movie (format: DD.MM.YYYY)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+### Basic Usage
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+// Get latest ratings (first page)
+const ratings = await csfd.userRatings('912-bart');
+
+ratings.forEach(rating => {
+  console.log(`${rating.title} (${rating.year}): ${rating.userRating}/5`);
+});
+```
+
+### Get Specific Page
+
+```typescript
+// Get second page of ratings
+const page2 = await csfd.userRatings('912-bart', { page: 2 });
+
+// Get third page
+const page3 = await csfd.userRatings('912-bart', { page: 3 });
+```
+
+### Fetch All Ratings with Rate Limiting
+
+```typescript
+// Fetch all ratings with 2-second delay between requests
+const allRatings = await csfd.userRatings('912-bart', {
+  allPages: true,
+  allPagesDelay: 2000 // 2 seconds between requests
+});
+
+console.log(`User has rated ${allRatings.length} items`);
+```
+
+### Filter by Content Type
+
+```typescript
+// Get only movie ratings (exclude series, episodes, etc.)
+const onlyMovies = await csfd.userRatings('912-bart', {
+  includesOnly: ['film']
+});
+
+// Get movies and TV films
+const moviesAndTvFilms = await csfd.userRatings('912-bart', {
+  includesOnly: ['film', 'tv-film']
+});
+
+// Exclude episodes and seasons
+const noEpisodes = await csfd.userRatings('912-bart', {
+  excludes: ['episode', 'season']
+});
+```
+
+### Calculate Statistics
+
+```typescript
+const ratings = await csfd.userRatings('912', {
+  allPages: true,
+  allPagesDelay: 2000
+});
+
+// Calculate average rating
+const totalStars = ratings.reduce((sum, r) => sum + r.userRating, 0);
+const average = totalStars / ratings.length;
+
+console.log(`Average rating: ${average.toFixed(2)}/5`);
+
+// Count by star rating
+const starCounts = ratings.reduce((acc, r) => {
+  acc[r.userRating] = (acc[r.userRating] || 0) + 1;
+  return acc;
+}, {} as Record<number, number>);
+
+console.log('Ratings distribution:', starCounts);
+```
+
+### Find Highly Rated Films
+
+```typescript
+const ratings = await csfd.userRatings('912-bart');
+
+// Get 5-star ratings only
+const fiveStars = ratings.filter(r => r.userRating === 5);
+
+console.log('5-star movies:');
+fiveStars.forEach(movie => {
+  console.log(`  - ${movie.title} (${movie.year})`);
+});
+```
+
+### Export Ratings
+
+```typescript
+import { csfd } from 'node-csfd-api';
+import { writeFileSync } from 'fs';
+
+async function exportRatings(username: string) {
+  const ratings = await csfd.userRatings(username, {
+    allPages: true,
+    allPagesDelay: 2000,
+    includesOnly: ['film'] // Only export movies
+  });
+  
+  // Convert to CSV
+  const csv = [
+    'Title,Year,Rating,Date',
+    ...ratings.map(r => 
+      `"${r.title}",${r.year},${r.userRating},${r.userDate}`
+    )
+  ].join('\n');
+  
+  writeFileSync(`${username}-ratings.csv`, csv);
+  console.log(`Exported ${ratings.length} ratings`);
+}
+
+await exportRatings('912-bart');
+```
+
+### Using User ID
+
+```typescript
+// All of these are valid:
+const ratings1 = await csfd.userRatings(912);
+const ratings2 = await csfd.userRatings('912');
+const ratings3 = await csfd.userRatings('912-bart');
+```
+
+## Rate Limiting
+
+<Warning>
+  When using `allPages: true`, ČSFD may detect automated requests and temporarily block your IP. Always use `allPagesDelay` with a reasonable value (2000-5000ms recommended).
+</Warning>
+
+```typescript
+// Good - with delay
+const ratings = await csfd.userRatings('912-bart', {
+  allPages: true,
+  allPagesDelay: 3000 // 3 seconds
+});
+
+// Bad - no delay (may get blocked)
+const ratings = await csfd.userRatings('912-bart', {
+  allPages: true
+});
+```
+
+## Related
+
+- [CSFDUserRatings Type](/api/types/user-types)
+- [CSFDUserRatingConfig Type](/api/types/user-types)
+- [CSFDFilmTypes](/api/types/common-types)
+- [userReviews()](/api/user-reviews) - Get user reviews

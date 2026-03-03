@@ -1,0 +1,600 @@
+---
+title: 'TypeScript Types'
+description: 'Complete guide to TypeScript type definitions in ČSFD API'
+icon: 'code'
+---
+
+The ČSFD API is fully type-safe with comprehensive TypeScript definitions for all data structures.
+
+## Overview
+
+All types are exported from the main package and organized into logical groups:
+
+- **Movie Types**: Complete movie and TV series data
+- **Search Types**: Search results for movies, series, and users
+- **Creator Types**: Actor, director, and crew information
+- **User Types**: Ratings and reviews
+- **Cinema Types**: Screening schedules
+- **Global Types**: Shared types and enums
+- **Options Types**: Configuration and request options
+
+## Importing Types
+
+All types are available as named exports:
+
+```typescript
+import {
+  CSFDMovie,
+  CSFDSearch,
+  CSFDCreator,
+  CSFDUserRatings,
+  CSFDUserReviews,
+  CSFDOptions
+} from 'node-csfd-api';
+```
+
+<Tip>
+  Import only the types you need to keep your bundle size small.
+</Tip>
+
+## Main Exported Types
+
+### CSFDMovie
+
+Complete movie or TV series information.
+
+```typescript
+interface CSFDMovie extends CSFDScreening {
+  rating: number | null;
+  poster: string;
+  photo: string;
+  ratingCount: number | null;
+  duration: number | string;
+  titlesOther: CSFDTitlesOther[];
+  origins: string[];
+  descriptions: string[];
+  trivia: string[];
+  genres: CSFDGenres[] | string[];
+  creators: CSFDCreators;
+  vod: CSFDVod[];
+  tags: string[];
+  premieres: CSFDPremiere[];
+  related: CSFDMovieListItem[];
+  similar: CSFDMovieListItem[];
+  seasons: CSFDSeriesChild[] | null;
+  episodes: CSFDSeriesChild[] | null;
+  parent: CSFDParent | null;
+  episodeCode: string | null;
+  seasonName: string | null;
+}
+```
+
+<Accordion title="View Usage Example">
+  ```typescript
+  import { csfd, CSFDMovie } from 'node-csfd-api';
+
+  const movie: CSFDMovie = await csfd.movie(535121);
+
+  console.log(movie.title);        // "Na špatné straně"
+  console.log(movie.rating);       // 73
+  console.log(movie.year);         // 2018
+  console.log(movie.genres);       // ["Krimi", "Drama", "Thriller"]
+  console.log(movie.creators.directors); // Array of directors
+  ```
+</Accordion>
+
+### CSFDSearch
+
+Search results containing movies, TV series, creators, and users.
+
+```typescript
+interface CSFDSearch {
+  movies: CSFDSearchMovie[];
+  tvSeries: CSFDSearchMovie[];
+  creators: CSFDSearchCreator[];
+  users: CSFDSearchUser[];
+}
+```
+
+<Accordion title="View Related Types">
+  ```typescript
+  interface CSFDSearchMovie extends CSFDScreening {
+    poster: string;
+    origins: string[];
+    creators: CSFDSearchCreators;
+  }
+
+  interface CSFDSearchUser {
+    id: number;
+    user: string;
+    userRealName: string;
+    avatar: string;
+    url: string;
+  }
+
+  interface CSFDSearchCreator extends CSFDMovieCreator {
+    image: string;
+  }
+  ```
+</Accordion>
+
+### CSFDCreator
+
+Actor, director, or crew member information.
+
+```typescript
+interface CSFDCreator {
+  id: number;
+  name: string;
+  birthday: string | null;
+  birthplace: string;
+  photo: string;
+  age: number | string;
+  bio: string;
+  films: CSFDCreatorScreening[];
+}
+```
+
+<Accordion title="View Usage Example">
+  ```typescript
+  import { csfd, CSFDCreator } from 'node-csfd-api';
+
+  const creator: CSFDCreator = await csfd.creator(2120);
+
+  console.log(creator.name);       // "Quentin Tarantino"
+  console.log(creator.birthday);   // "27.03.1963"
+  console.log(creator.films);      // Array of films
+  ```
+</Accordion>
+
+### CSFDUserRatings
+
+User movie ratings with star ratings and dates.
+
+```typescript
+interface CSFDUserRatings extends CSFDScreening {
+  userRating: CSFDStars;
+  userDate: string;
+}
+
+type CSFDStars = 0 | 1 | 2 | 3 | 4 | 5;
+```
+
+<Accordion title="View Usage Example">
+  ```typescript
+  import { csfd, CSFDUserRatings } from 'node-csfd-api';
+
+  const ratings: CSFDUserRatings[] = await csfd.userRatings('912-bart');
+
+  ratings.forEach(rating => {
+    console.log(`${rating.title} (${rating.year}): ${rating.userRating}⭐`);
+  });
+  ```
+</Accordion>
+
+### CSFDUserReviews
+
+User reviews with full text and ratings.
+
+```typescript
+interface CSFDUserReviews extends CSFDScreening {
+  userRating: CSFDStars;
+  userDate: string | null;
+  text: string;
+  poster: string;
+}
+```
+
+## Shared Types
+
+### CSFDScreening
+
+Base interface for all content (movies, series, etc.).
+
+```typescript
+interface CSFDScreening {
+  id: number;
+  title: string;
+  year: number;
+  url: string;
+  type: CSFDFilmTypes;
+  colorRating: CSFDColorRating;
+}
+```
+
+### CSFDCreators
+
+Complete cast and crew information.
+
+```typescript
+interface CSFDCreators {
+  directors: CSFDMovieCreator[];
+  writers: CSFDMovieCreator[];
+  cinematography: CSFDMovieCreator[];
+  music: CSFDMovieCreator[];
+  actors: CSFDMovieCreator[];
+  basedOn: CSFDMovieCreator[];
+  producers: CSFDMovieCreator[];
+  filmEditing: CSFDMovieCreator[];
+  costumeDesign: CSFDMovieCreator[];
+  productionDesign: CSFDMovieCreator[];
+}
+```
+
+### CSFDMovieCreator
+
+Individual creator/actor information.
+
+```typescript
+interface CSFDMovieCreator {
+  /**
+   * CSFD person ID.
+   * You can assemble url from ID: `https://www.csfd.cz/tvurce/${id}`
+   */
+  id: number;
+  name: string;
+  url: string;
+}
+```
+
+## Enums and Union Types
+
+### CSFDFilmTypes
+
+All possible content types on ČSFD.
+
+```typescript
+type CSFDFilmTypes =
+  | 'film'
+  | 'tv-film'
+  | 'tv-show'
+  | 'series'
+  | 'theatrical'
+  | 'concert'
+  | 'season'
+  | 'student-film'
+  | 'amateur-film'
+  | 'music-video'
+  | 'episode'
+  | 'video-compilation';
+```
+
+### CSFDColorRating
+
+Color-coded rating system used by ČSFD.
+
+```typescript
+type CSFDColorRating = 'bad' | 'average' | 'good' | 'unknown';
+```
+
+<Info>
+  - `bad`: 0% - 29% (black color)
+  - `average`: 30% - 69% (blue color)  
+  - `good`: 70% - 100% (red color)
+  - `unknown`: Not rated yet (gray color)
+</Info>
+
+### CSFDGenres
+
+All movie genres available on ČSFD.
+
+```typescript
+type CSFDGenres =
+  | 'Akční'
+  | 'Animovaný'
+  | 'Dobrodružný'
+  | 'Dokumentární'
+  | 'Drama'
+  | 'Fantasy'
+  | 'Horor'
+  | 'Komedie'
+  | 'Krimi'
+  | 'Romantický'
+  | 'Sci-Fi'
+  | 'Thriller'
+  | 'Válečný'
+  | 'Western'
+  // ... and 30+ more
+```
+
+<Accordion title="View All Genres">
+  ```typescript
+  type CSFDGenres =
+    | 'Akční'
+    | 'Animovaný'
+    | 'Dobrodružný'
+    | 'Dokumentární'
+    | 'Drama'
+    | 'Experimentální'
+    | 'Fantasy'
+    | 'Film-Noir'
+    | 'Historický'
+    | 'Horor'
+    | 'Hudební'
+    | 'IMAX'
+    | 'Katastrofický'
+    | 'Komedie'
+    | 'Krátkometrážní'
+    | 'Krimi'
+    | 'Loutkový'
+    | 'Muzikál'
+    | 'Mysteriózní'
+    | 'Naučný'
+    | 'Podobenství'
+    | 'Poetický'
+    | 'Pohádka'
+    | 'Povídkový'
+    | 'Psychologický'
+    | 'Publicistický'
+    | 'Reality-TV'
+    | 'Road movie'
+    | 'Rodinný'
+    | 'Romantický'
+    | 'Sci-Fi'
+    | 'Soutěžní'
+    | 'Sportovní'
+    | 'Stand-up'
+    | 'Talk-show'
+    | 'Taneční'
+    | 'Telenovela'
+    | 'Thriller'
+    | 'Válečný'
+    | 'Western'
+    | 'Zábavný'
+    | 'Životopisný';
+  ```
+</Accordion>
+
+### CSFDVodService
+
+Supported VOD (Video on Demand) platforms.
+
+```typescript
+type CSFDVodService =
+  | 'Netflix'
+  | 'hbogo'
+  | 'Prime Video'
+  | 'Apple TV+'
+  | 'iTunes'
+  | 'Voyo'
+  | 'YouTube Movies'
+  | 'DVD'
+  | 'Blu-ray'
+  // ... and more
+```
+
+## Configuration Types
+
+### CSFDOptions
+
+Global configuration options. See [Configuration](/advanced/configuration) for details.
+
+```typescript
+interface CSFDOptions {
+  language?: CSFDLanguage;
+  request?: RequestInit;
+}
+
+type CSFDLanguage = 'cs' | 'en' | 'sk';
+```
+
+### CSFDUserRatingConfig
+
+Options for fetching user ratings.
+
+```typescript
+interface CSFDUserRatingConfig {
+  includesOnly?: CSFDFilmTypes[];
+  excludes?: CSFDFilmTypes[];
+  allPages?: boolean;
+  allPagesDelay?: number;
+  page?: number;
+}
+```
+
+### CSFDUserReviewsConfig
+
+Options for fetching user reviews (same as ratings).
+
+```typescript
+interface CSFDUserReviewsConfig {
+  includesOnly?: CSFDFilmTypes[];
+  excludes?: CSFDFilmTypes[];
+  allPages?: boolean;
+  allPagesDelay?: number;
+  page?: number;
+}
+```
+
+## Using Types in Your Project
+
+<Tabs>
+  <Tab title="Function Parameters">
+    ```typescript
+    import { CSFDMovie, CSFDSearch } from 'node-csfd-api';
+
+    function analyzeMovie(movie: CSFDMovie): void {
+      if (movie.rating && movie.rating > 80) {
+        console.log(`${movie.title} is highly rated!`);
+      }
+    }
+
+    function processSearch(results: CSFDSearch): void {
+      console.log(`Found ${results.movies.length} movies`);
+      results.movies.forEach(movie => {
+        console.log(`- ${movie.title} (${movie.year})`);
+      });
+    }
+    ```
+  </Tab>
+
+  <Tab title="React Components">
+    ```typescript
+    import React from 'react';
+    import { CSFDMovie } from 'node-csfd-api';
+
+    interface MovieCardProps {
+      movie: CSFDMovie;
+    }
+
+    const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
+      return (
+        <div>
+          <h2>{movie.title}</h2>
+          <p>Year: {movie.year}</p>
+          <p>Rating: {movie.rating}%</p>
+          <img src={movie.poster} alt={movie.title} />
+        </div>
+      );
+    };
+    ```
+  </Tab>
+
+  <Tab title="Type Guards">
+    ```typescript
+    import { CSFDColorRating, CSFDFilmTypes } from 'node-csfd-api';
+
+    function isHighlyRated(colorRating: CSFDColorRating): boolean {
+      return colorRating === 'good';
+    }
+
+    function isMovie(type: CSFDFilmTypes): boolean {
+      return type === 'film';
+    }
+
+    function isSeries(type: CSFDFilmTypes): boolean {
+      return type === 'series' || type === 'season' || type === 'episode';
+    }
+    ```
+  </Tab>
+
+  <Tab title="Async Handlers">
+    ```typescript
+    import { csfd, CSFDCreator, CSFDMovie } from 'node-csfd-api';
+
+    async function getDirectorMovies(directorId: number): Promise<CSFDMovie[]> {
+      const creator: CSFDCreator = await csfd.creator(directorId);
+      
+      const movies: CSFDMovie[] = await Promise.all(
+        creator.films.map(film => csfd.movie(film.id))
+      );
+      
+      return movies.filter(movie => movie.rating && movie.rating > 70);
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Advanced Type Usage
+
+### Partial Types
+
+```typescript
+import { CSFDMovie } from 'node-csfd-api';
+
+// Create a type with only specific fields
+type MovieSummary = Pick<CSFDMovie, 'id' | 'title' | 'year' | 'rating'>;
+
+const summary: MovieSummary = {
+  id: 535121,
+  title: 'Na špatné straně',
+  year: 2018,
+  rating: 73
+};
+```
+
+### Extending Types
+
+```typescript
+import { CSFDMovie } from 'node-csfd-api';
+
+// Add custom fields to existing types
+interface EnrichedMovie extends CSFDMovie {
+  watched: boolean;
+  personalNotes: string;
+  addedToWatchlist: Date;
+}
+
+const myMovie: EnrichedMovie = {
+  ...movieData,
+  watched: true,
+  personalNotes: 'Great thriller!',
+  addedToWatchlist: new Date()
+};
+```
+
+### Generic Utilities
+
+```typescript
+import { CSFDMovie, CSFDCreator } from 'node-csfd-api';
+
+// Generic response wrapper
+interface ApiResponse<T> {
+  data: T;
+  timestamp: Date;
+  cached: boolean;
+}
+
+type MovieResponse = ApiResponse<CSFDMovie>;
+type CreatorResponse = ApiResponse<CSFDCreator>;
+```
+
+## Type Safety Best Practices
+
+<Tip>
+  **Always use TypeScript strict mode** for maximum type safety:
+
+  ```json tsconfig.json
+  {
+    "compilerOptions": {
+      "strict": true,
+      "strictNullChecks": true
+    }
+  }
+  ```
+</Tip>
+
+### Null Checking
+
+```typescript
+import { CSFDMovie } from 'node-csfd-api';
+
+function displayRating(movie: CSFDMovie): string {
+  // Good: Check for null before using
+  if (movie.rating !== null) {
+    return `Rating: ${movie.rating}%`;
+  }
+  return 'Not rated yet';
+}
+
+// Or use optional chaining
+function getRating(movie: CSFDMovie): number {
+  return movie.rating ?? 0;
+}
+```
+
+### Type Narrowing
+
+```typescript
+import { CSFDMovie } from 'node-csfd-api';
+
+function hasEpisodes(movie: CSFDMovie): movie is CSFDMovie & { episodes: NonNullable<CSFDMovie['episodes']> } {
+  return movie.episodes !== null && movie.episodes.length > 0;
+}
+
+if (hasEpisodes(movie)) {
+  // TypeScript knows movie.episodes is not null here
+  movie.episodes.forEach(ep => console.log(ep.title));
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/advanced/configuration">
+    Learn about request options and language settings
+  </Card>
+  <Card title="API Reference" icon="book" href="/api/csfd-class">
+    Explore all available methods
+  </Card>
+</CardGroup>

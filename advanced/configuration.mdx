@@ -1,0 +1,471 @@
+---
+title: 'Configuration'
+description: 'Configure language, request options, and default settings'
+icon: 'gear'
+---
+
+The ČSFD API supports configuration options for language preferences and HTTP request customization.
+
+## CSFDOptions Interface
+
+All configuration is done through the `CSFDOptions` interface:
+
+```typescript
+interface CSFDOptions {
+  language?: CSFDLanguage;
+  request?: RequestInit;
+}
+
+type CSFDLanguage = 'cs' | 'en' | 'sk';
+```
+
+## Language Options
+
+You can configure which language version of ČSFD to scrape data from.
+
+### Supported Languages
+
+<Tabs>
+  <Tab title="Czech (cs)">
+    ```typescript
+    import { csfd, CSFDOptions } from 'node-csfd-api';
+
+    const options: CSFDOptions = {
+      language: 'cs'
+    };
+
+    const movie = await csfd.movie(535121, options);
+    // Returns data from csfd.cz
+    ```
+
+    **Default language.** Czech version of ČSFD.
+  </Tab>
+
+  <Tab title="English (en)">
+    ```typescript
+    import { csfd, CSFDOptions } from 'node-csfd-api';
+
+    const options: CSFDOptions = {
+      language: 'en'
+    };
+
+    const movie = await csfd.movie(535121, options);
+    // Returns data from csfd.cz/en
+    ```
+
+    English version with translated interface elements.
+  </Tab>
+
+  <Tab title="Slovak (sk)">
+    ```typescript
+    import { csfd, CSFDOptions } from 'node-csfd-api';
+
+    const options: CSFDOptions = {
+      language: 'sk'
+    };
+
+    const movie = await csfd.movie(535121, options);
+    // Returns data from csfd.sk
+    ```
+
+    Slovak version of ČSFD.
+  </Tab>
+</Tabs>
+
+<Note>
+  The language setting affects the **interface language** and some localized content, but movie titles and most data remain the same across all versions.
+</Note>
+
+### Language Impact
+
+Different language settings affect:
+
+<AccordionGroup>
+  <Accordion title="Creator Group Names">
+    Creator roles are translated based on the language:
+
+    ```typescript
+    // Czech (cs)
+    type CSFDCreatorGroups = 'Režie' | 'Scénář' | 'Kamera' | 'Hudba' | 'Hrají' | ...
+
+    // English (en)
+    type CSFDCreatorGroupsEnglish = 'Directed by' | 'Screenplay' | 'Cinematography' | 'Composer' | 'Cast' | ...
+
+    // Slovak (sk)
+    type CSFDCreatorGroupsSlovak = 'Réžia' | 'Scenár' | 'Kamera' | 'Hudba' | 'Hrajú' | ...
+    ```
+  </Accordion>
+
+  <Accordion title="Genre Names">
+    Genre labels may vary slightly between languages, though most remain similar.
+  </Accordion>
+
+  <Accordion title="URLs">
+    - Czech: `https://www.csfd.cz/...`
+    - English: `https://www.csfd.cz/en/...`
+    - Slovak: `https://www.csfd.sk/...`
+  </Accordion>
+</AccordionGroup>
+
+## Request Options
+
+Customize HTTP requests using the standard `RequestInit` interface from the Fetch API.
+
+### Custom Headers
+
+```typescript
+import { csfd, CSFDOptions } from 'node-csfd-api';
+
+const options: CSFDOptions = {
+  request: {
+    headers: {
+      'User-Agent': 'MyApp/1.0',
+      'Accept-Language': 'cs-CZ'
+    }
+  }
+};
+
+const movie = await csfd.movie(535121, options);
+```
+
+<Info>
+  The library already sets appropriate default headers. Only override if you have specific requirements.
+</Info>
+
+### Timeout Configuration
+
+```typescript
+import { csfd, CSFDOptions } from 'node-csfd-api';
+
+const options: CSFDOptions = {
+  request: {
+    signal: AbortSignal.timeout(5000) // 5 second timeout
+  }
+};
+
+try {
+  const movie = await csfd.movie(535121, options);
+} catch (error) {
+  if (error.name === 'AbortError') {
+    console.error('Request timed out');
+  }
+}
+```
+
+### Proxy Configuration
+
+```typescript
+import { csfd, CSFDOptions } from 'node-csfd-api';
+import { ProxyAgent } from 'undici';
+
+const options: CSFDOptions = {
+  request: {
+    dispatcher: new ProxyAgent('http://proxy.example.com:8080')
+  }
+};
+
+const movie = await csfd.movie(535121, options);
+```
+
+### Custom Fetch Implementation
+
+If you need to use a custom fetch implementation:
+
+```typescript
+import { csfd } from 'node-csfd-api';
+import fetch from 'node-fetch';
+
+// Note: The library uses native fetch by default
+// Custom fetch can be configured globally if needed
+```
+
+## Setting Default Options
+
+You can create a configured instance to avoid passing options to every call:
+
+### Using a Wrapper Function
+
+```typescript
+import { csfd, CSFDOptions } from 'node-csfd-api';
+
+const defaultOptions: CSFDOptions = {
+  language: 'en',
+  request: {
+    headers: {
+      'User-Agent': 'MyApp/1.0'
+    }
+  }
+};
+
+// Create wrapper functions
+export const getMovie = (id: number, opts?: CSFDOptions) => 
+  csfd.movie(id, { ...defaultOptions, ...opts });
+
+export const searchCSFD = (query: string, opts?: CSFDOptions) => 
+  csfd.search(query, { ...defaultOptions, ...opts });
+
+// Usage
+const movie = await getMovie(535121);
+const results = await searchCSFD('Tarantino');
+```
+
+### Using a Configuration Class
+
+```typescript
+import { csfd, CSFDOptions } from 'node-csfd-api';
+
+class CSFDClient {
+  private options: CSFDOptions;
+
+  constructor(options: CSFDOptions = {}) {
+    this.options = options;
+  }
+
+  async movie(id: number, opts?: CSFDOptions) {
+    return csfd.movie(id, { ...this.options, ...opts });
+  }
+
+  async search(query: string, opts?: CSFDOptions) {
+    return csfd.search(query, { ...this.options, ...opts });
+  }
+
+  async creator(id: number, opts?: CSFDOptions) {
+    return csfd.creator(id, { ...this.options, ...opts });
+  }
+}
+
+// Usage
+const client = new CSFDClient({
+  language: 'en',
+  request: {
+    headers: { 'User-Agent': 'MyApp/1.0' }
+  }
+});
+
+const movie = await client.movie(535121);
+```
+
+## Per-Request Options Override
+
+You can override default options on a per-request basis:
+
+```typescript
+import { csfd, CSFDOptions } from 'node-csfd-api';
+
+const defaultOptions: CSFDOptions = {
+  language: 'cs'
+};
+
+// Use Czech by default
+const czechMovie = await csfd.movie(535121, defaultOptions);
+
+// Override to English for this specific request
+const englishMovie = await csfd.movie(535121, {
+  ...defaultOptions,
+  language: 'en'
+});
+```
+
+## Common Configuration Patterns
+
+### Production Setup with Error Handling
+
+```typescript
+import { csfd, CSFDOptions } from 'node-csfd-api';
+
+const productionOptions: CSFDOptions = {
+  language: 'cs',
+  request: {
+    headers: {
+      'User-Agent': 'MyApp/1.0.0'
+    },
+    signal: AbortSignal.timeout(10000)
+  }
+};
+
+async function fetchMovieSafely(id: number) {
+  try {
+    return await csfd.movie(id, productionOptions);
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error('Request timeout');
+    } else {
+      console.error('Failed to fetch movie:', error);
+    }
+    return null;
+  }
+}
+```
+
+### Multi-Language Support
+
+```typescript
+import { csfd, CSFDLanguage, CSFDMovie } from 'node-csfd-api';
+
+async function getMovieInLanguage(
+  id: number, 
+  language: CSFDLanguage
+): Promise<CSFDMovie> {
+  return csfd.movie(id, { language });
+}
+
+// Fetch same movie in different languages
+const [czech, english, slovak] = await Promise.all([
+  getMovieInLanguage(535121, 'cs'),
+  getMovieInLanguage(535121, 'en'),
+  getMovieInLanguage(535121, 'sk')
+]);
+```
+
+### Rate Limiting with Delays
+
+```typescript
+import { csfd, CSFDUserRatingConfig } from 'node-csfd-api';
+
+const ratingOptions: CSFDUserRatingConfig = {
+  allPages: true,
+  allPagesDelay: 2000 // 2 second delay between pages
+};
+
+const ratings = await csfd.userRatings('912-bart', ratingOptions);
+```
+
+<Tip>
+  When fetching all pages of data, **always use `allPagesDelay`** to avoid being rate-limited or banned by ČSFD.
+</Tip>
+
+## Environment-Based Configuration
+
+```typescript
+import { csfd, CSFDOptions } from 'node-csfd-api';
+
+const getOptions = (): CSFDOptions => {
+  const isDev = process.env.NODE_ENV === 'development';
+  
+  return {
+    language: (process.env.CSFD_LANGUAGE as any) || 'cs',
+    request: {
+      headers: {
+        'User-Agent': process.env.USER_AGENT || 'CSFD-API-Client/1.0'
+      },
+      signal: isDev ? undefined : AbortSignal.timeout(5000)
+    }
+  };
+};
+
+const options = getOptions();
+const movie = await csfd.movie(535121, options);
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use consistent User-Agent">
+    Set a meaningful User-Agent to identify your application:
+
+    ```typescript
+    const options: CSFDOptions = {
+      request: {
+        headers: {
+          'User-Agent': 'YourAppName/1.0.0 (contact@example.com)'
+        }
+      }
+    };
+    ```
+  </Accordion>
+
+  <Accordion title="Implement timeouts">
+    Always set reasonable timeouts to prevent hanging requests:
+
+    ```typescript
+    const options: CSFDOptions = {
+      request: {
+        signal: AbortSignal.timeout(10000) // 10 seconds
+      }
+    };
+    ```
+  </Accordion>
+
+  <Accordion title="Respect rate limits">
+    Use delays when making multiple requests:
+
+    ```typescript
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+    for (const id of movieIds) {
+      const movie = await csfd.movie(id, options);
+      await delay(1000); // Wait 1 second between requests
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Handle errors gracefully">
+    Always wrap API calls in try-catch:
+
+    ```typescript
+    try {
+      const movie = await csfd.movie(id, options);
+      return movie;
+    } catch (error) {
+      console.error('API call failed:', error);
+      return null;
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Language not working as expected">
+    **Solution:** Verify you're using the correct language code (`cs`, `en`, or `sk`).
+
+    ```typescript
+    // Correct
+    const options = { language: 'en' };
+
+    // Incorrect
+    const options = { language: 'english' }; // TypeScript will catch this
+    ```
+  </Accordion>
+
+  <Accordion title="Requests timing out">
+    **Solution:** Increase the timeout or check your network connection.
+
+    ```typescript
+    const options: CSFDOptions = {
+      request: {
+        signal: AbortSignal.timeout(30000) // Increase to 30 seconds
+      }
+    };
+    ```
+  </Accordion>
+
+  <Accordion title="Getting blocked/rate limited">
+    **Solution:** Add delays between requests and use a proper User-Agent.
+
+    ```typescript
+    const options: CSFDOptions = {
+      request: {
+        headers: {
+          'User-Agent': 'YourApp/1.0'
+        }
+      }
+    };
+
+    // Add delay between requests
+    await delay(2000);
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="TypeScript Types" icon="code" href="/advanced/typescript-types">
+    Explore all available types and interfaces
+  </Card>
+  <Card title="API Reference" icon="book" href="/api/csfd-class">
+    See all available methods and their options
+  </Card>
+</CardGroup>

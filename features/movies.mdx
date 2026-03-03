@@ -1,0 +1,367 @@
+---
+title: Movies
+description: Retrieve comprehensive information about movies and TV series from ČSFD
+---
+
+The `movie()` method retrieves detailed information about any movie, TV series, season, or episode from ČSFD. It returns comprehensive data including ratings, cast, crew, trivia, VOD availability, and more.
+
+## Method Signature
+
+```typescript
+csfd.movie(id: number, options?: CSFDOptions): Promise<CSFDMovie>
+```
+
+## Parameters
+
+<ParamField path="id" type="number" required>
+  The ČSFD movie ID. You can find this in the movie's URL (e.g., `535121` from `https://www.csfd.cz/film/535121`)
+</ParamField>
+
+<ParamField path="options" type="CSFDOptions">
+  Optional configuration object
+  
+  <Expandable title="properties">
+    <ParamField path="language" type="'cs' | 'en' | 'sk'">
+      Language variant to use. Defaults to `'cs'` (Czech)
+    </ParamField>
+    
+    <ParamField path="request" type="object">
+      Custom request options (headers, cookies, etc.)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return Type
+
+<ResponseField name="CSFDMovie" type="object">
+  Complete movie information object
+  
+  <Expandable title="properties">
+    <ResponseField name="id" type="number">
+      ČSFD movie ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string">
+      Movie title (localized based on language option)
+    </ResponseField>
+    
+    <ResponseField name="year" type="number">
+      Release year
+    </ResponseField>
+    
+    <ResponseField name="type" type="CSFDFilmTypes">
+      Content type: `'film'`, `'series'`, `'season'`, `'episode'`, `'tv-film'`, `'tv-show'`, etc.
+    </ResponseField>
+    
+    <ResponseField name="url" type="string">
+      Full URL to the movie on ČSFD
+    </ResponseField>
+    
+    <ResponseField name="rating" type="number | null">
+      Average user rating (0-100 scale)
+    </ResponseField>
+    
+    <ResponseField name="ratingCount" type="number | null">
+      Number of user ratings
+    </ResponseField>
+    
+    <ResponseField name="colorRating" type="'bad' | 'average' | 'good' | 'unknown'">
+      Overall rating quality indicator (good: 70-100%, average: 30-69%, bad: 0-29%)
+    </ResponseField>
+    
+    <ResponseField name="duration" type="number | string">
+      Runtime in minutes or formatted duration string
+    </ResponseField>
+    
+    <ResponseField name="poster" type="string">
+      URL to the official poster image
+    </ResponseField>
+    
+    <ResponseField name="photo" type="string">
+      URL to a random photo from the movie
+    </ResponseField>
+    
+    <ResponseField name="genres" type="string[]">
+      Array of genres (e.g., `['Krimi', 'Drama', 'Thriller']`)
+    </ResponseField>
+    
+    <ResponseField name="origins" type="string[]">
+      Countries of origin (e.g., `['USA', 'Kanada']`)
+    </ResponseField>
+    
+    <ResponseField name="descriptions" type="string[]">
+      Plot descriptions (multiple language variants may be available)
+    </ResponseField>
+    
+    <ResponseField name="trivia" type="string[]">
+      Interesting facts and trivia about the movie
+    </ResponseField>
+    
+    <ResponseField name="titlesOther" type="CSFDTitlesOther[]">
+      Alternative titles in different countries
+      
+      <Expandable title="properties">
+        <ResponseField name="country" type="string">
+          Country name
+        </ResponseField>
+        <ResponseField name="title" type="string">
+          Movie title in that country
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="creators" type="CSFDCreators">
+      Cast and crew information
+      
+      <Expandable title="properties">
+        <ResponseField name="directors" type="CSFDMovieCreator[]">
+          Film directors
+        </ResponseField>
+        <ResponseField name="actors" type="CSFDMovieCreator[]">
+          Main cast
+        </ResponseField>
+        <ResponseField name="writers" type="CSFDMovieCreator[]">
+          Screenplay writers
+        </ResponseField>
+        <ResponseField name="music" type="CSFDMovieCreator[]">
+          Composers
+        </ResponseField>
+        <ResponseField name="producers" type="CSFDMovieCreator[]">
+          Producers
+        </ResponseField>
+        <ResponseField name="cinematography" type="CSFDMovieCreator[]">
+          Cinematographers
+        </ResponseField>
+        <ResponseField name="basedOn" type="CSFDMovieCreator[]">
+          Original work authors
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="vod" type="CSFDVod[]">
+      Video on demand availability
+      
+      <Expandable title="properties">
+        <ResponseField name="title" type="string">
+          Platform name (Netflix, Prime Video, etc.)
+        </ResponseField>
+        <ResponseField name="url" type="string">
+          Link to the content on the platform
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="tags" type="string[]">
+      User-generated tags
+    </ResponseField>
+    
+    <ResponseField name="premieres" type="CSFDPremiere[]">
+      Premiere information for different countries
+      
+      <Expandable title="properties">
+        <ResponseField name="country" type="string" />
+        <ResponseField name="format" type="string">
+          Format ("V kinech", "Na Blu-ray", etc.)
+        </ResponseField>
+        <ResponseField name="date" type="string" />
+        <ResponseField name="company" type="string">
+          Distributor/publisher
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="related" type="CSFDMovieListItem[]">
+      Related movies (prequels, sequels, etc.)
+    </ResponseField>
+    
+    <ResponseField name="similar" type="CSFDMovieListItem[]">
+      Similar movies
+    </ResponseField>
+    
+    <ResponseField name="seasons" type="CSFDSeriesChild[] | null">
+      Array of seasons (only for TV series)
+    </ResponseField>
+    
+    <ResponseField name="episodes" type="CSFDSeriesChild[] | null">
+      Array of episodes (only for seasons)
+    </ResponseField>
+    
+    <ResponseField name="parent" type="CSFDParent | null">
+      Parent series/season information (for episodes and seasons)
+    </ResponseField>
+    
+    <ResponseField name="episodeCode" type="string | null">
+      Episode code (e.g., "S01E05") for episodes
+    </ResponseField>
+    
+    <ResponseField name="seasonName" type="string | null">
+      Season name (for seasons)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Usage Examples
+
+<Tabs>
+  <Tab title="Basic Usage">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Fetch movie details
+    const movie = await csfd.movie(535121);
+    
+    console.log(movie.title);        // "Na špatné straně"
+    console.log(movie.year);         // 2018
+    console.log(movie.rating);       // 73
+    console.log(movie.genres);       // ['Krimi', 'Drama', 'Thriller']
+    ```
+  </Tab>
+  
+  <Tab title="With Language Option">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Fetch movie in English
+    const movie = await csfd.movie(535121, { language: 'en' });
+    
+    // Fetch movie in Slovak
+    const movieSk = await csfd.movie(535121, { language: 'sk' });
+    ```
+  </Tab>
+  
+  <Tab title="Promise Syntax">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    csfd.movie(535121)
+      .then((movie) => {
+        console.log(movie.title);
+        console.log(movie.creators.directors);
+      });
+    ```
+  </Tab>
+  
+  <Tab title="Accessing Cast & Crew">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const movie = await csfd.movie(535121);
+    
+    // Get director information
+    const director = movie.creators.directors[0];
+    console.log(director.name);  // "S. Craig Zahler"
+    console.log(director.id);    // 87470
+    console.log(director.url);   // ČSFD URL
+    
+    // Get main actors
+    movie.creators.actors.forEach(actor => {
+      console.log(actor.name);
+    });
+    ```
+  </Tab>
+</Tabs>
+
+<Accordion title="Example Response">
+```json
+{
+  "id": 535121,
+  "title": "Na špatné straně",
+  "year": "2018",
+  "descriptions": [
+    "Otupělý policejní veterán Ridgeman (Mel Gibson)...",
+    "Brett je policajt tesne ..."
+  ],
+  "genres": ["Krimi", "Drama", "Thriller"],
+  "type": "film",
+  "url": "https://www.csfd.cz/film/535121",
+  "origins": ["USA", "Kanada"],
+  "colorRating": "good",
+  "rating": 73,
+  "ratingCount": 6654,
+  "photo": "//image.pmgstatic.com/cache/resized/w1326/files/images/film/photos/162/980/162980090_bbffbb.jpg",
+  "trivia": [
+    "Když Henry (Tory Kittles) se svým mladším bratrem...",
+    "Ve filmu se střídají..."
+  ],
+  "titlesOther": [
+    { "country": "USA", "title": "Dragged Across Concrete" },
+    { "country": "Kanada", "title": "Dragged Across Concrete" },
+    { "country": "Slovensko", "title": "Na zlej strane" },
+    { "country": "Austrálie", "title": "Dragged Across Concrete" },
+    { "country": "Velká Británie", "title": "Dragged Across Concrete" }
+  ],
+  "poster": "https://image.pmgstatic.com/cache/resized/w1080/files/images/film/posters/163/579/163579352_bf8737.jpg",
+  "creators": {
+    "directors": [
+      {
+        "id": 87470,
+        "name": "S. Craig Zahler",
+        "url": "https://www.csfd.cz/tvurce/87470-s-craig-zahler/"
+      }
+    ],
+    "actors": [
+      {
+        "id": 1,
+        "name": "Mel Gibson",
+        "url": "https://www.csfd.cz/tvurce/1-mel-gibson/"
+      }
+    ],
+    "basedOn": [],
+    "writers": [
+      {
+        "id": 87470,
+        "name": "S. Craig Zahler",
+        "url": "https://www.csfd.cz/tvurce/87470-s-craig-zahler/"
+      }
+    ],
+    "music": [
+      {
+        "id": 203209,
+        "name": "Jeff Herriott",
+        "url": "https://www.csfd.cz/tvurce/203209-jeff-herriott/"
+      }
+    ],
+    "producers": [
+      {
+        "id": 320006,
+        "name": "Sefton Fincham",
+        "url": "https://www.csfd.cz/tvurce/320006-sefton-fincham/"
+      }
+    ]
+  },
+  "vod": [
+    {
+      "title": "Voyo",
+      "url": "https://voyo.nova.cz/filmy/4604-na-spatne-strane"
+    },
+    {
+      "title": "DVD",
+      "url": "https://filmy.heureka.cz/na-spatne-strane-dvd/#utm_source=csfd.cz&utm_medium=cooperation&utm_campaign=csfd_movies_feed"
+    }
+  ],
+  "tags": ["město", "sledování"],
+  "premieres": [
+    {
+      "country": "Česko",
+      "format": "Na Blu-ray",
+      "date": "07.08.2019",
+      "company": "Magic Box"
+    },
+    {
+      "country": "USA",
+      "format": "V kinech",
+      "date": "22.03.2019",
+      "company": "Lionsgate US"
+    }
+  ]
+}
+```
+</Accordion>
+
+<Note>
+The `movie()` method works for all content types on ČSFD including regular films, TV films, TV series, individual seasons, and episodes.
+</Note>
+
+<Warning>
+Be mindful of rate limiting when making multiple requests. Consider implementing delays between consecutive calls to avoid being blocked.
+</Warning>

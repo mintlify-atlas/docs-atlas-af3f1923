@@ -1,0 +1,130 @@
+---
+title: CLI Tools Overview
+description: Command-line tools for interacting with ČSFD API
+---
+
+The ČSFD API library includes powerful CLI tools that allow you to interact with ČSFD.cz directly from your terminal. These tools are perfect for automation, data export, and running standalone servers.
+
+## Installation
+
+You can use the CLI tools in two ways:
+
+<CardGroup cols={2}>
+  <Card title="NPX (No Installation)" icon="terminal">
+    Run commands instantly without installing anything:
+    ```bash
+    npx node-csfd-api <command>
+    ```
+  </Card>
+  
+  <Card title="Homebrew (Global Install)" icon="beer-mug-empty">
+    Install globally on macOS/Linux:
+    ```bash
+    brew install bartholomej/tap/csfd
+    csfd <command>
+    ```
+  </Card>
+</CardGroup>
+
+<Note>
+All examples below use `npx node-csfd-api`, but if you installed via Homebrew, simply replace it with `csfd` (e.g., `csfd export ratings 912`).
+</Note>
+
+## Available Commands
+
+<CardGroup cols={2}>
+  <Card title="Export Ratings" icon="download" href="/cli/export-ratings">
+    Backup your ČSFD ratings to CSV, JSON, or Letterboxd format
+  </Card>
+  
+  <Card title="REST Server" icon="server" href="/cli/rest-server">
+    Run a standalone REST API server for the ČSFD API
+  </Card>
+  
+  <Card title="MCP Server" icon="robot" href="/cli/mcp-server">
+    Run a Model Context Protocol server for AI integrations
+  </Card>
+  
+  <Card title="Help" icon="circle-question">
+    Display help information:
+    ```bash
+    npx node-csfd-api help
+    ```
+  </Card>
+</CardGroup>
+
+## Quick Start Examples
+
+<CodeGroup>
+```bash Export Ratings
+# Export to CSV (default)
+npx node-csfd-api export ratings 912
+
+# Export to JSON
+npx node-csfd-api export ratings 912 --json
+
+# Export to Letterboxd format
+npx node-csfd-api export ratings 912 --letterboxd
+```
+
+```bash Start REST Server
+# Start on default port (3000)
+npx node-csfd-api server
+
+# Start on custom port
+PORT=8080 npx node-csfd-api server
+```
+
+```bash Start MCP Server
+# For use with Claude Desktop and other AI tools
+npx node-csfd-api mcp
+```
+</CodeGroup>
+
+## When to Use Each Tool
+
+### Export Ratings
+Use this when you want to:
+- Create a backup of your ČSFD ratings
+- Migrate your ratings to Letterboxd
+- Analyze your viewing history with custom tools
+- Generate reports from your rating data
+
+### REST Server
+Use this when you want to:
+- Build a web application using ČSFD data
+- Create a public API service
+- Integrate ČSFD data into existing systems
+- Cache and optimize ČSFD requests
+
+### MCP Server
+Use this when you want to:
+- Query ČSFD data through AI assistants like Claude
+- Build AI-powered movie recommendation systems
+- Enable natural language queries to ČSFD
+- Integrate ČSFD into LLM workflows
+
+## Command Reference
+
+| Command | Description |
+|---------|-------------|
+| `server`, `api` | Start the REST API server |
+| `mcp` | Start the MCP server for AI agents |
+| `export ratings <userId>` | Export user ratings |
+| `help`, `--help`, `-h` | Show help message |
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card title="Export Ratings" icon="download" href="/cli/export-ratings">
+    Learn about all export formats and options
+  </Card>
+  
+  <Card title="REST Server" icon="server" href="/cli/rest-server">
+    Set up and configure the REST API server
+  </Card>
+  
+  <Card title="MCP Server" icon="robot" href="/cli/mcp-server">
+    Integrate ČSFD with AI tools
+  </Card>
+</CardGroup>

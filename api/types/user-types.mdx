@@ -1,0 +1,253 @@
+---
+title: 'User Types'
+description: 'TypeScript types and interfaces for user ratings and reviews in the ČSFD API'
+---
+
+## Overview
+
+The user types module contains TypeScript interfaces for user-specific data, including user ratings, reviews, and their configuration options.
+
+## CSFDUserRatings
+
+Represents a user's rating for a movie or TV show.
+
+<ResponseField name="CSFDUserRatings" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD movie ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string" required>
+      Movie title
+    </ResponseField>
+    
+    <ResponseField name="year" type="number" required>
+      Release year
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Full ČSFD URL to the movie page
+    </ResponseField>
+    
+    <ResponseField name="type" type="CSFDFilmTypes" required>
+      Type of film (film, series, tv-show, etc.)
+    </ResponseField>
+    
+    <ResponseField name="colorRating" type="CSFDColorRating" required>
+      Overall aggregated rating color: 'bad', 'average', 'good', or 'unknown'
+    </ResponseField>
+    
+    <ResponseField name="userRating" type="CSFDStars" required>
+      User's star rating (0-5)
+    </ResponseField>
+    
+    <ResponseField name="userDate" type="string" required>
+      Date when the rating was given (formatted string)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDUserRatingConfig
+
+Configuration options for fetching user ratings.
+
+<ResponseField name="CSFDUserRatingConfig" type="object">
+  <Expandable title="properties">
+    <ResponseField name="includesOnly" type="CSFDFilmTypes[]">
+      Only include these film types in results
+    </ResponseField>
+    
+    <ResponseField name="excludes" type="CSFDFilmTypes[]">
+      Exclude these film types from results
+    </ResponseField>
+    
+    <ResponseField name="allPages" type="boolean">
+      Fetch all ratings across all pages. **Warning:** Use wisely to avoid detection and bans. Consider using with `allPagesDelay`.
+    </ResponseField>
+    
+    <ResponseField name="allPagesDelay" type="number">
+      Delay between page requests in milliseconds (when using `allPages`)
+    </ResponseField>
+    
+    <ResponseField name="page" type="number">
+      Specific page number to fetch (e.g., 2 for second page)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDUserReviews
+
+Represents a user's written review for a movie or TV show.
+
+<ResponseField name="CSFDUserReviews" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD movie ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string" required>
+      Movie title
+    </ResponseField>
+    
+    <ResponseField name="year" type="number" required>
+      Release year
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Full ČSFD URL to the movie page
+    </ResponseField>
+    
+    <ResponseField name="type" type="CSFDFilmTypes" required>
+      Type of film (film, series, tv-show, etc.)
+    </ResponseField>
+    
+    <ResponseField name="colorRating" type="CSFDColorRating" required>
+      Overall aggregated rating color: 'bad', 'average', 'good', or 'unknown'
+    </ResponseField>
+    
+    <ResponseField name="userRating" type="CSFDStars" required>
+      User's star rating (0-5)
+    </ResponseField>
+    
+    <ResponseField name="userDate" type="string | null" required>
+      Date when the review was written, or null if not available
+    </ResponseField>
+    
+    <ResponseField name="text" type="string" required>
+      Review text content
+    </ResponseField>
+    
+    <ResponseField name="poster" type="string" required>
+      URL to the movie poster
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDUserReviewsConfig
+
+Configuration options for fetching user reviews.
+
+<ResponseField name="CSFDUserReviewsConfig" type="object">
+  <Expandable title="properties">
+    <ResponseField name="includesOnly" type="CSFDFilmTypes[]">
+      Only include these film types in results
+    </ResponseField>
+    
+    <ResponseField name="excludes" type="CSFDFilmTypes[]">
+      Exclude these film types from results
+    </ResponseField>
+    
+    <ResponseField name="allPages" type="boolean">
+      Fetch all reviews across all pages. **Warning:** Use wisely to avoid detection and bans. Consider using with `allPagesDelay`.
+    </ResponseField>
+    
+    <ResponseField name="allPagesDelay" type="number">
+      Delay between page requests in milliseconds (when using `allPages`)
+    </ResponseField>
+    
+    <ResponseField name="page" type="number">
+      Specific page number to fetch (e.g., 2 for second page)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Type Definitions
+
+### CSFDColors
+
+Colors used in the ČSFD interface:
+
+```typescript
+type CSFDColors = 'lightgrey' | 'blue' | 'red' | 'grey';
+```
+
+## Import Example
+
+```typescript
+import type {
+  CSFDUserRatings,
+  CSFDUserRatingConfig,
+  CSFDUserReviews,
+  CSFDUserReviewsConfig,
+  CSFDColors,
+} from 'node-csfd-api';
+```
+
+## TypeScript Interface
+
+```typescript
+import { CSFDFilmTypes, CSFDScreening, CSFDStars } from './global';
+
+export interface CSFDUserRatings extends CSFDScreening {
+  userRating: CSFDStars;
+  userDate: string;
+}
+
+export interface CSFDUserRatingConfig {
+  includesOnly?: CSFDFilmTypes[];
+  excludes?: CSFDFilmTypes[];
+  allPages?: boolean;
+  allPagesDelay?: number;
+  page?: number;
+}
+
+export interface CSFDUserReviews extends CSFDScreening {
+  userRating: CSFDStars;
+  userDate: string | null;
+  text: string;
+  poster: string;
+}
+
+export interface CSFDUserReviewsConfig {
+  includesOnly?: CSFDFilmTypes[];
+  excludes?: CSFDFilmTypes[];
+  allPages?: boolean;
+  allPagesDelay?: number;
+  page?: number;
+}
+
+export type CSFDColors = 'lightgrey' | 'blue' | 'red' | 'grey';
+```
+
+## Usage Example
+
+```typescript
+import { CSFD } from 'node-csfd-api';
+
+const csfd = new CSFD();
+
+// Fetch user ratings with configuration
+const ratings = await csfd.userRatings('username', {
+  includesOnly: ['film', 'series'],
+  page: 1,
+});
+
+ratings.forEach((rating) => {
+  console.log(`${rating.title} (${rating.year})`);
+  console.log(`User rating: ${rating.userRating} stars`);
+  console.log(`Rated on: ${rating.userDate}`);
+});
+
+// Fetch user reviews with pagination
+const reviews = await csfd.userReviews('username', {
+  excludes: ['episode'],
+  page: 1,
+  allPages: false,
+});
+
+reviews.forEach((review) => {
+  console.log(`${review.title} (${review.year})`);
+  console.log(`Rating: ${review.userRating} stars`);
+  console.log(`Review: ${review.text.substring(0, 100)}...`);
+});
+
+// Fetch all ratings with delay (use carefully!)
+const allRatings = await csfd.userRatings('username', {
+  allPages: true,
+  allPagesDelay: 2000, // 2 seconds between requests
+});
+```
+
+<Warning>
+  When using `allPages: true`, always set a reasonable `allPagesDelay` to avoid being detected as a bot and potentially banned from ČSFD.
+</Warning>

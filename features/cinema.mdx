@@ -1,0 +1,311 @@
+---
+title: Cinema Showtimes
+description: Get current cinema showtimes and screenings by district and time period
+---
+
+The `cinema()` method retrieves current cinema showtimes for a specific district and time period. It returns information about cinemas, their locations, and grouped film screenings by date.
+
+## Method Signature
+
+```typescript
+csfd.cinema(
+  district: number | string,
+  period: CSFDCinemaPeriod,
+  options?: CSFDOptions
+): Promise<CSFDCinema[]>
+```
+
+## Parameters
+
+<ParamField path="district" type="number | string" required>
+  District ID or code. Common values:
+  - `1` - Praha (Prague)
+  - `2` - Brno
+  - `3` - Ostrava
+  - See ČSFD for other district codes
+</ParamField>
+
+<ParamField path="period" type="CSFDCinemaPeriod" required>
+  Time period for showtimes:
+  - `'today'` - Today's screenings
+  - `'tomorrow'` - Tomorrow's screenings
+  - `'weekend'` - This weekend
+  - `'week'` - This week
+  - `'month'` - This month
+</ParamField>
+
+<ParamField path="options" type="CSFDOptions">
+  Optional request configuration
+  
+  <Expandable title="properties">
+    <ParamField path="language" type="'cs' | 'en' | 'sk'">
+      Language variant. Defaults to `'cs'`
+    </ParamField>
+    
+    <ParamField path="request" type="object">
+      Custom request options
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return Type
+
+<ResponseField name="CSFDCinema[]" type="array">
+  Array of cinema objects with screenings
+  
+  <Expandable title="item properties">
+    <ResponseField name="id" type="number">
+      Cinema ID on ČSFD
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Cinema name
+    </ResponseField>
+    
+    <ResponseField name="city" type="string">
+      City where the cinema is located
+    </ResponseField>
+    
+    <ResponseField name="url" type="string">
+      URL to the cinema page on ČSFD
+    </ResponseField>
+    
+    <ResponseField name="coords" type="object">
+      Geographic coordinates
+      
+      <Expandable title="properties">
+        <ResponseField name="lat" type="number">
+          Latitude
+        </ResponseField>
+        <ResponseField name="lng" type="number">
+          Longitude
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="screenings" type="CSFDCinemaGroupedFilmsByDate[]">
+      Screenings grouped by date
+      
+      <Expandable title="properties">
+        <ResponseField name="date" type="string">
+          Date of screenings (e.g., "Dnes", "Zítra", "15.03.2026")
+        </ResponseField>
+        
+        <ResponseField name="films" type="CSFDCinemaMovie[]">
+          Films screening on this date
+          
+          <Expandable title="properties">
+            <ResponseField name="id" type="number">
+              Movie ID
+            </ResponseField>
+            
+            <ResponseField name="title" type="string">
+              Movie title
+            </ResponseField>
+            
+            <ResponseField name="url" type="string">
+              URL to movie on ČSFD
+            </ResponseField>
+            
+            <ResponseField name="meta" type="string[]">
+              Screening metadata (e.g., `['dubbing', '3D', 'subtitles']`)
+            </ResponseField>
+            
+            <ResponseField name="showTimes" type="string[]">
+              Array of showtime strings (e.g., `['18:00', '20:30']`)
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Usage Examples
+
+<Tabs>
+  <Tab title="Today's Showtimes">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Get today's showtimes in Prague
+    const cinemas = await csfd.cinema(1, 'today');
+    
+    cinemas.forEach(cinema => {
+      console.log(`${cinema.name} - ${cinema.city}`);
+      cinema.screenings.forEach(screening => {
+        console.log(`  ${screening.date}:`);
+        screening.films.forEach(film => {
+          console.log(`    ${film.title}: ${film.showTimes.join(', ')}`);
+        });
+      });
+    });
+    ```
+  </Tab>
+  
+  <Tab title="Weekend Showtimes">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Get weekend showtimes in Brno
+    const cinemas = await csfd.cinema(2, 'weekend');
+    
+    console.log(`Found ${cinemas.length} cinemas in Brno`);
+    ```
+  </Tab>
+  
+  <Tab title="Find Specific Movie">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const cinemas = await csfd.cinema(1, 'today');
+    const movieTitle = 'Dune';
+    
+    // Find where a specific movie is playing
+    cinemas.forEach(cinema => {
+      cinema.screenings.forEach(screening => {
+        const movie = screening.films.find(f => 
+          f.title.includes(movieTitle)
+        );
+        
+        if (movie) {
+          console.log(`${cinema.name}:`);
+          console.log(`  ${movie.title}`);
+          console.log(`  Showtimes: ${movie.showTimes.join(', ')}`);
+          console.log(`  Meta: ${movie.meta.join(', ')}`);
+        }
+      });
+    });
+    ```
+  </Tab>
+  
+  <Tab title="Filter by Format">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const cinemas = await csfd.cinema(1, 'today');
+    
+    // Find all 3D movies
+    const movies3D = [];
+    
+    cinemas.forEach(cinema => {
+      cinema.screenings.forEach(screening => {
+        screening.films.forEach(film => {
+          if (film.meta.includes('3D')) {
+            movies3D.push({
+              title: film.title,
+              cinema: cinema.name,
+              times: film.showTimes
+            });
+          }
+        });
+      });
+    });
+    
+    console.log(`Found ${movies3D.length} 3D screenings`);
+    ```
+  </Tab>
+  
+  <Tab title="Cinema Locations">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const cinemas = await csfd.cinema(1, 'today');
+    
+    // Extract cinema locations for mapping
+    const locations = cinemas.map(cinema => ({
+      name: cinema.name,
+      lat: cinema.coords.lat,
+      lng: cinema.coords.lng,
+      url: cinema.url
+    }));
+    
+    console.log('Cinema coordinates:');
+    locations.forEach(loc => {
+      console.log(`${loc.name}: ${loc.lat}, ${loc.lng}`);
+    });
+    ```
+  </Tab>
+</Tabs>
+
+<Accordion title="Example Response">
+```json
+[
+  {
+    "id": 12345,
+    "name": "Cinema City Flora",
+    "city": "Praha",
+    "url": "https://www.csfd.cz/kino/12345-cinema-city-flora/",
+    "coords": {
+      "lat": 50.0755,
+      "lng": 14.4378
+    },
+    "screenings": [
+      {
+        "date": "Dnes",
+        "films": [
+          {
+            "id": 535121,
+            "title": "Na špatné straně",
+            "url": "https://www.csfd.cz/film/535121",
+            "meta": ["subtitles"],
+            "showTimes": ["18:00", "20:30", "22:45"]
+          },
+          {
+            "id": 678910,
+            "title": "Dune: Part Two",
+            "url": "https://www.csfd.cz/film/678910",
+            "meta": ["3D", "subtitles"],
+            "showTimes": ["17:00", "20:00"]
+          }
+        ]
+      },
+      {
+        "date": "Zítra",
+        "films": [
+          {
+            "id": 535121,
+            "title": "Na špatné straně",
+            "url": "https://www.csfd.cz/film/535121",
+            "meta": ["dubbing"],
+            "showTimes": ["19:00", "21:30"]
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+</Accordion>
+
+## Time Periods
+
+The `period` parameter accepts the following values:
+
+- **`'today'`** - Shows screenings for today only
+- **`'tomorrow'`** - Shows screenings for tomorrow
+- **`'weekend'`** - Shows screenings for the upcoming weekend (Friday-Sunday)
+- **`'week'`** - Shows screenings for the current week
+- **`'month'`** - Shows screenings for the entire month
+
+## Screening Metadata
+
+The `meta` array contains information about the screening format and language:
+
+- **`'3D'`** - 3D screening
+- **`'dubbing'`** - Czech/Slovak dubbing
+- **`'subtitles'`** - Original language with subtitles
+
+Other values may appear depending on what ČSFD provides.
+
+<Note>
+Cinema data is real-time and reflects current ČSFD information. Showtimes may change without notice.
+</Note>
+
+<Tip>
+Use the geographic coordinates to display cinemas on a map. This is particularly useful for building cinema finder applications.
+</Tip>
+
+<Warning>
+Some smaller cinemas may not have complete coordinate data. Always check if `coords` exists before using it.
+</Warning>

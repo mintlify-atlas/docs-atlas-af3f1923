@@ -1,0 +1,398 @@
+---
+title: Letterboxd Export
+description: Complete guide to exporting ČSFD ratings to Letterboxd format
+---
+
+This guide shows you how to export your ČSFD ratings to Letterboxd format, allowing you to migrate your movie diary and ratings between platforms.
+
+## Why Export to Letterboxd?
+
+Letterboxd is a popular international movie tracking platform. Exporting your ČSFD ratings allows you to:
+
+- **Migrate platforms** - Move your movie history to Letterboxd
+- **Cross-reference** - Compare ratings between platforms
+- **Backup data** - Keep a portable copy of your ratings
+- **Discover differences** - See how Czech ratings compare to international ones
+
+<Note>
+Letterboxd uses English titles and IMDb/TMDb IDs, so the export process includes title matching which may not be 100% accurate for all films.
+</Note>
+
+## Quick Start with CLI
+
+The easiest way to export to Letterboxd format is using the built-in CLI tool.
+
+### Option A: NPX (No Installation)
+
+```bash
+# Export user 912's ratings to Letterboxd CSV
+npx node-csfd-api export ratings 912 --letterboxd
+```
+
+This creates a file named `912-for-letterboxd.csv` in your current directory.
+
+### Option B: Homebrew (macOS/Linux)
+
+```bash
+# Install globally
+brew install bartholomej/tap/csfd
+
+# Export to Letterboxd format
+csfd export ratings 912 --letterboxd
+```
+
+<Steps>
+  <Step title="Find your user ID">
+    Your ČSFD user ID is in your profile URL:
+    ```
+    https://www.csfd.cz/uzivatel/912-bart/
+                            ^^^^
+                          Your ID
+    ```
+  </Step>
+  
+  <Step title="Run the export command">
+    ```bash
+    npx node-csfd-api export ratings 912 --letterboxd
+    ```
+  </Step>
+  
+  <Step title="Import to Letterboxd">
+    1. Go to [Letterboxd Import](https://letterboxd.com/import/)
+    2. Upload the generated CSV file
+    3. Review and confirm the import
+  </Step>
+</Steps>
+
+## CLI Export Options
+
+The CLI provides three export formats:
+
+<Tabs>
+  <Tab title="Letterboxd CSV">
+    ```bash
+    # Letterboxd-compatible CSV format
+    npx node-csfd-api export ratings 912 --letterboxd
+    
+    # Output: 912-for-letterboxd.csv
+    ```
+    
+    **Use case**: Import directly to Letterboxd
+  </Tab>
+  
+  <Tab title="Standard CSV">
+    ```bash
+    # Standard CSV format (default)
+    npx node-csfd-api export ratings 912
+    
+    # Output: 912-ratings.csv
+    ```
+    
+    **Use case**: General data analysis, Excel, Google Sheets
+  </Tab>
+  
+  <Tab title="JSON">
+    ```bash
+    # JSON format with full data
+    npx node-csfd-api export ratings 912 --json
+    
+    # Output: 912-ratings.json
+    ```
+    
+    **Use case**: Programmatic processing, backups
+  </Tab>
+</Tabs>
+
+## Programmatic Export
+
+You can also export programmatically using the library:
+
+```typescript
+import { csfd } from 'node-csfd-api';
+import { writeFile } from 'fs/promises';
+
+// Fetch all movie ratings
+const ratings = await csfd.userRatings('912', {
+  includesOnly: ['film'],  // Only movies
+  allPages: true,
+  allPagesDelay: 2000     // Be respectful with rate limiting
+});
+
+// Convert to Letterboxd CSV format
+const letterboxdCSV = convertToLetterboxdFormat(ratings);
+
+// Save to file
+await writeFile('letterboxd-import.csv', letterboxdCSV);
+console.log(`✅ Exported ${ratings.length} ratings`);
+
+function convertToLetterboxdFormat(ratings) {
+  // CSV header
+  let csv = 'Title,Year,Rating,WatchedDate\n';
+  
+  ratings.forEach(rating => {
+    // Convert 0-5 stars to 0-10 scale (Letterboxd uses 0.5 increments)
+    const letterboxdRating = rating.userRating * 2;
+    
+    // Parse date from DD.MM.YYYY to YYYY-MM-DD
+    const [day, month, year] = rating.userDate.split('.');
+    const watchedDate = `${year}-${month}-${day}`;
+    
+    csv += `"${rating.title}",${rating.year},${letterboxdRating},${watchedDate}\n`;
+  });
+  
+  return csv;
+}
+```
+
+<Warning>
+**Important**: This is a simplified example. The actual CLI implementation includes additional matching logic to improve accuracy with Letterboxd's database.
+</Warning>
+
+## Format Mapping Explained
+
+### Rating Conversion
+
+ČSFD uses a 5-star system (0-5), while Letterboxd uses a 10-point scale (0.5 increments):
+
+| ČSFD Stars | Letterboxd Rating | Visual         |
+|------------|-------------------|----------------|
+| 5          | 10 (5.0 stars)    | ★★★★★          |
+| 4          | 8 (4.0 stars)     | ★★★★☆          |
+| 3          | 6 (3.0 stars)     | ★★★☆☆          |
+| 2          | 4 (2.0 stars)     | ★★☆☆☆          |
+| 1          | 2 (1.0 star)      | ★☆☆☆☆          |
+| 0          | 0 (no rating)     | ☆☆☆☆☆          |
+
+```typescript
+// Conversion formula
+const letterboxdRating = csfdRating * 2;
+```
+
+### Date Format
+
+ČSFD uses Czech date format (DD.MM.YYYY), Letterboxd uses ISO format (YYYY-MM-DD):
+
+```typescript
+// ČSFD format: "01.11.2020"
+const csfdDate = "01.11.2020";
+
+// Convert to Letterboxd format: "2020-11-01"
+const [day, month, year] = csfdDate.split('.');
+const letterboxdDate = `${year}-${month}-${day}`;
+```
+
+### Title Matching
+
+ČSFD uses Czech titles, Letterboxd uses English titles:
+
+- **Perfect match**: Films with identical international titles
+  - Example: "Matrix" → "Matrix"
+- **Requires lookup**: Films with different titles
+  - Example: "Tenkrát v Hollywoodu" → "Once Upon a Time in Hollywood"
+
+<Tip>
+**Pro Tip**: The CLI tool automatically attempts to match titles. Check the import preview in Letterboxd to verify matches before confirming.
+</Tip>
+
+## CSV Structure
+
+The Letterboxd CSV format looks like this:
+
+```csv
+Title,Year,Rating,WatchedDate
+"The Matrix",1999,10,2020-11-01
+"Pulp Fiction",1994,10,2020-10-28
+"Inception",2010,8,2020-10-25
+```
+
+### Required Columns
+
+- **Title** - Movie title (preferably English)
+- **Year** - Release year
+- **Rating** - 0-10 scale (optional)
+- **WatchedDate** - ISO format YYYY-MM-DD (optional)
+
+### Optional Columns
+
+Letterboxd also supports:
+
+- **Review** - Your review text
+- **Tags** - Comma-separated tags
+- **Rewatch** - Yes/No
+
+## Complete Export Script
+
+Here's a production-ready export script:
+
+```typescript
+import { csfd, CSFDUserRatings } from 'node-csfd-api';
+import { writeFile } from 'fs/promises';
+
+interface LetterboxdEntry {
+  title: string;
+  year: number;
+  rating: number;
+  watchedDate: string;
+}
+
+async function exportToLetterboxd(userId: string) {
+  console.log(`📥 Fetching ratings for user ${userId}...`);
+  
+  // Fetch all movie ratings
+  const ratings = await csfd.userRatings(userId, {
+    includesOnly: ['film'],
+    allPages: true,
+    allPagesDelay: 2000
+  });
+  
+  console.log(`✅ Found ${ratings.length} movie ratings`);
+  
+  // Convert to Letterboxd format
+  const letterboxdData: LetterboxdEntry[] = ratings.map(rating => ({
+    title: rating.title,
+    year: rating.year,
+    rating: rating.userRating * 2,
+    watchedDate: convertDate(rating.userDate)
+  }));
+  
+  // Generate CSV
+  const csv = generateCSV(letterboxdData);
+  
+  // Save file
+  const filename = `${userId}-for-letterboxd.csv`;
+  await writeFile(filename, csv);
+  
+  console.log(`💾 Saved to ${filename}`);
+  console.log(`📊 Statistics:`);
+  printStatistics(letterboxdData);
+}
+
+function convertDate(csfdDate: string): string {
+  const [day, month, year] = csfdDate.split('.');
+  return `${year}-${month}-${day}`;
+}
+
+function generateCSV(data: LetterboxdEntry[]): string {
+  let csv = 'Title,Year,Rating,WatchedDate\n';
+  
+  data.forEach(entry => {
+    csv += `"${entry.title.replace(/"/g, '""')}",`; // Escape quotes
+    csv += `${entry.year},`;
+    csv += `${entry.rating},`;
+    csv += `${entry.watchedDate}\n`;
+  });
+  
+  return csv;
+}
+
+function printStatistics(data: LetterboxdEntry[]) {
+  const byRating = data.reduce((acc, entry) => {
+    acc[entry.rating] = (acc[entry.rating] || 0) + 1;
+    return acc;
+  }, {} as Record<number, number>);
+  
+  console.log('Rating distribution:');
+  [10, 8, 6, 4, 2].forEach(rating => {
+    const count = byRating[rating] || 0;
+    const percent = ((count / data.length) * 100).toFixed(1);
+    console.log(`  ${rating}/10: ${count} (${percent}%)`);
+  });
+}
+
+// Run the export
+exportToLetterboxd('912');
+```
+
+Run it with:
+
+```bash
+ts-node export-letterboxd.ts
+```
+
+## Tips for Successful Import
+
+<Steps>
+  <Step title="Clean your data">
+    Review your ČSFD ratings first and remove any duplicates or test entries.
+  </Step>
+  
+  <Step title="Export only movies">
+    Use `includesOnly: ['film']` to exclude TV shows, which Letterboxd handles differently.
+    ```typescript
+    { includesOnly: ['film'] }
+    ```
+  </Step>
+  
+  <Step title="Use rate limiting">
+    Add delays when fetching all pages to avoid being blocked:
+    ```typescript
+    { allPages: true, allPagesDelay: 2000 }
+    ```
+  </Step>
+  
+  <Step title="Preview before import">
+    Letterboxd shows a preview before confirming. Review the matches carefully.
+  </Step>
+  
+  <Step title="Handle unmatched titles">
+    Some Czech films may not be in Letterboxd's database. You'll need to add them manually.
+  </Step>
+</Steps>
+
+<Warning>
+**Title Matching Accuracy**: The export uses ČSFD Czech titles, which may not perfectly match Letterboxd's English database. Expect some mismatches that you'll need to verify during import.
+</Warning>
+
+## Troubleshooting
+
+### Problem: Many unmatched titles
+
+**Solution**: This is normal for Czech films. Letterboxd will show unmatched entries during import preview. You can:
+- Skip unmatched entries
+- Manually search and match them in Letterboxd
+- Add missing films to Letterboxd first
+
+### Problem: Dates not importing
+
+**Solution**: Ensure dates are in YYYY-MM-DD format:
+
+```typescript
+// ❌ Wrong: "01.11.2020"
+// ✅ Correct: "2020-11-01"
+
+const [day, month, year] = csfdDate.split('.');
+const correctDate = `${year}-${month}-${day}`;
+```
+
+### Problem: Ratings showing incorrectly
+
+**Solution**: Verify the conversion from 5-star to 10-point scale:
+
+```typescript
+// ČSFD: 0-5
+// Letterboxd: 0-10
+const letterboxdRating = csfdRating * 2;
+```
+
+## Reverse Import (Letterboxd to ČSFD)
+
+<Note>
+Importing from Letterboxd to ČSFD is **not supported** by this library. ČSFD does not provide an import API. You would need to manually add ratings on ČSFD.
+</Note>
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="Filtering Ratings" icon="filter" href="/examples/filtering-ratings">
+    Learn about filtering and pagination options
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/cli/export-ratings">
+    Complete CLI export documentation
+  </Card>
+  <Card title="User Ratings API" icon="book" href="/api/user-ratings">
+    API reference for userRatings()
+  </Card>
+  <Card title="Letterboxd Import" icon="external-link" href="https://letterboxd.com/import/">
+    Official Letterboxd import page
+  </Card>
+</CardGroup>

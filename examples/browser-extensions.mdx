@@ -1,0 +1,576 @@
+---
+title: Browser Extensions
+description: Using node-csfd-api in Chrome and Firefox browser extensions
+---
+
+The ČSFD API library works perfectly in browser extensions, enabling you to add ČSFD ratings and information to other streaming platforms and websites. This guide covers setup, CORS handling, and real-world examples.
+
+## Why Use in Browser Extensions?
+
+Browser extensions can enhance streaming platforms by:
+
+- **Displaying ratings** - Show ČSFD ratings on Netflix, HBO, etc.
+- **Adding metadata** - Display Czech reviews, cast info, and more
+- **Enriching catalogs** - Augment film databases with ČSFD data
+- **Creating tools** - Build custom movie discovery features
+
+<Note>
+The library is already being used in production extensions with thousands of users. See the [Real-World Examples](#real-world-examples) section.
+</Note>
+
+## Real-World Examples
+
+These extensions are built with `node-csfd-api` and are available in production:
+
+### Netflix ČSFD Extension
+
+**What it does**: Shows ČSFD ratings directly on Netflix
+
+**Features**:
+- Display ČSFD rating badge on Netflix thumbnails
+- Link directly to ČSFD film pages
+- Works on Netflix browse and watch pages
+
+**Links**:
+- [Chrome Web Store](https://chrome.google.com/webstore/detail/netflix-csfd/eomgekccbddnlpmehgdjmlphndjgnlni)
+- [Source Code](https://github.com/bartholomej/netflix-csfd-ext)
+
+**Tech Stack**: TypeScript, Manifest V3, node-csfd-api
+
+### Dafilms Extension
+
+**What it does**: Integrates ČSFD ratings into Dafilms.cz
+
+**Features**:
+- Show ČSFD ratings on Dafilms catalog
+- Quick links to full ČSFD pages
+- Real-time rating updates
+
+**Links**:
+- [Chrome Web Store](https://chrome.google.com/webstore/detail/dafilms/hgcgneddmgflnbmhkjnefiobjgobbmdm)
+- [Source Code](https://github.com/bartholomej/dafilms-ext)
+
+### Kviff.tv Extension
+
+**What it does**: Adds ČSFD integration to Kviff.tv festival platform
+
+**Features**:
+- Festival film ratings
+- Director and cast information
+- Enhanced film discovery
+
+**Links**:
+- [Chrome Web Store](https://chrome.google.com/webstore/detail/kvifftv-%20-csfd/ihpngekoejodiligajlppbeedofhnmfm)
+- [Source Code](https://github.com/bartholomej/kviff-ext)
+
+## Setup Guide
+
+### Installation
+
+Install the package in your extension project:
+
+```bash
+npm install node-csfd-api
+```
+
+### Manifest Configuration
+
+<Tabs>
+  <Tab title="Manifest V3">
+    ```json manifest.json
+    {
+      "manifest_version": 3,
+      "name": "My ČSFD Extension",
+      "version": "1.0.0",
+      "description": "Show ČSFD ratings",
+      
+      "permissions": [
+        "activeTab"
+      ],
+      
+      "host_permissions": [
+        "https://www.csfd.cz/*"
+      ],
+      
+      "content_scripts": [{
+        "matches": ["https://www.netflix.com/*"],
+        "js": ["content.js"]
+      }],
+      
+      "background": {
+        "service_worker": "background.js"
+      }
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Manifest V2">
+    ```json manifest.json
+    {
+      "manifest_version": 2,
+      "name": "My ČSFD Extension",
+      "version": "1.0.0",
+      "description": "Show ČSFD ratings",
+      
+      "permissions": [
+        "https://www.csfd.cz/*",
+        "activeTab"
+      ],
+      
+      "content_scripts": [{
+        "matches": ["https://www.netflix.com/*"],
+        "js": ["content.js"]
+      }],
+      
+      "background": {
+        "scripts": ["background.js"]
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+**Important Permissions**:
+- `host_permissions` (V3) or `permissions` (V2) must include `https://www.csfd.cz/*`
+- This allows the extension to fetch data from ČSFD
+</Warning>
+
+## CORS Considerations
+
+Browser extensions need special handling for Cross-Origin Resource Sharing (CORS).
+
+### Why CORS Matters
+
+**Problem**: Web pages cannot directly fetch from ČSFD due to CORS restrictions.
+
+**Solution**: Browser extensions can bypass CORS with proper permissions.
+
+<Steps>
+  <Step title="Declare host permissions">
+    ```json
+    "host_permissions": ["https://www.csfd.cz/*"]
+    ```
+  </Step>
+  
+  <Step title="Fetch in background script">
+    Background scripts/service workers can access ČSFD without CORS issues.
+  </Step>
+  
+  <Step title="Use message passing">
+    Content scripts send messages to background script to fetch data.
+  </Step>
+</Steps>
+
+### Architecture Pattern
+
+```
+Content Script → Message → Background Script → ČSFD API → Response
+  (Netflix)                    (node-csfd-api)              (Data)
+```
+
+## Example: Netflix ČSFD Extension
+
+Here's a simplified version of how the Netflix ČSFD extension works:
+
+### Content Script
+
+```typescript content.ts
+// Runs on Netflix pages
+import { chrome } from 'chrome';
+
+// Find all movie titles on the page
+const movieTitles = document.querySelectorAll('.movie-title');
+
+movieTitles.forEach(async (element) => {
+  const title = element.textContent;
+  
+  // Send message to background script
+  const response = await chrome.runtime.sendMessage({
+    action: 'searchMovie',
+    title: title
+  });
+  
+  if (response.movie) {
+    // Display ČSFD rating
+    displayRating(element, response.movie);
+  }
+});
+
+function displayRating(element: Element, movie: any) {
+  const badge = document.createElement('div');
+  badge.className = 'csfd-rating-badge';
+  badge.innerHTML = `
+    <a href="${movie.url}" target="_blank">
+      ČSFD: ${movie.rating}%
+    </a>
+  `;
+  element.appendChild(badge);
+}
+```
+
+### Background Script
+
+```typescript background.ts
+// Service worker (Manifest V3)
+import { csfd } from 'node-csfd-api';
+
+// Listen for messages from content scripts
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'searchMovie') {
+    searchMovie(request.title)
+      .then(movie => sendResponse({ movie }))
+      .catch(error => sendResponse({ error: error.message }));
+    
+    // Return true to indicate async response
+    return true;
+  }
+});
+
+async function searchMovie(title: string) {
+  try {
+    // Search ČSFD
+    const results = await csfd.search(title);
+    
+    if (results.movies.length > 0) {
+      const movie = results.movies[0];
+      
+      // Get full movie details
+      const details = await csfd.movie(movie.id);
+      return details;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('ČSFD search error:', error);
+    return null;
+  }
+}
+```
+
+### Styling
+
+```css content.css
+.csfd-rating-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #ba0305;
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.csfd-rating-badge a {
+  color: white;
+  text-decoration: none;
+}
+
+.csfd-rating-badge a:hover {
+  text-decoration: underline;
+}
+```
+
+## Complete Example Project
+
+Here's a complete minimal extension structure:
+
+```
+my-csfd-extension/
+├── manifest.json
+├── background.ts
+├── content.ts
+├── content.css
+├── package.json
+└── tsconfig.json
+```
+
+### package.json
+
+```json
+{
+  "name": "my-csfd-extension",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && vite build",
+    "dev": "vite build --watch"
+  },
+  "dependencies": {
+    "node-csfd-api": "latest"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  }
+}
+```
+
+### Build Configuration
+
+```typescript vite.config.ts
+import { defineConfig } from 'vite';
+import { resolve } from 'path';
+
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      input: {
+        background: resolve(__dirname, 'background.ts'),
+        content: resolve(__dirname, 'content.ts')
+      },
+      output: {
+        entryFileNames: '[name].js',
+        format: 'iife'
+      }
+    }
+  }
+});
+```
+
+## Advanced Features
+
+### Caching Results
+
+Cache API responses to improve performance:
+
+```typescript background.ts
+import { csfd } from 'node-csfd-api';
+
+// Simple in-memory cache
+const cache = new Map<string, any>();
+const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
+
+async function searchMovieWithCache(title: string) {
+  // Check cache
+  const cached = cache.get(title);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+  
+  // Fetch from API
+  const results = await csfd.search(title);
+  
+  // Store in cache
+  cache.set(title, {
+    data: results,
+    timestamp: Date.now()
+  });
+  
+  return results;
+}
+```
+
+### Persistent Storage
+
+Use Chrome storage API for persistent caching:
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+async function getMovieWithStorage(movieId: number) {
+  // Try to get from storage
+  const result = await chrome.storage.local.get([`movie_${movieId}`]);
+  
+  if (result[`movie_${movieId}`]) {
+    return result[`movie_${movieId}`];
+  }
+  
+  // Fetch from API
+  const movie = await csfd.movie(movieId);
+  
+  // Save to storage
+  await chrome.storage.local.set({
+    [`movie_${movieId}`]: movie
+  });
+  
+  return movie;
+}
+```
+
+### Rate Limiting
+
+Implement rate limiting to avoid overwhelming ČSFD:
+
+```typescript
+class RateLimiter {
+  private queue: Array<() => Promise<any>> = [];
+  private processing = false;
+  private delay = 1000; // 1 second between requests
+  
+  async add<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.queue.push(async () => {
+        try {
+          const result = await fn();
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      });
+      
+      this.process();
+    });
+  }
+  
+  private async process() {
+    if (this.processing || this.queue.length === 0) return;
+    
+    this.processing = true;
+    
+    while (this.queue.length > 0) {
+      const task = this.queue.shift();
+      if (task) {
+        await task();
+        await new Promise(resolve => setTimeout(resolve, this.delay));
+      }
+    }
+    
+    this.processing = false;
+  }
+}
+
+// Usage
+const limiter = new RateLimiter();
+
+async function searchWithRateLimit(title: string) {
+  return limiter.add(() => csfd.search(title));
+}
+```
+
+## Testing Your Extension
+
+<Steps>
+  <Step title="Build the extension">
+    ```bash
+    npm run build
+    ```
+  </Step>
+  
+  <Step title="Load in Chrome">
+    1. Go to `chrome://extensions`
+    2. Enable "Developer mode"
+    3. Click "Load unpacked"
+    4. Select your extension directory
+  </Step>
+  
+  <Step title="Test on target site">
+    Navigate to Netflix (or your target site) and verify the extension works.
+  </Step>
+  
+  <Step title="Check console for errors">
+    Open DevTools and check for any errors in both:
+    - Page console (content script)
+    - Extension background page console
+  </Step>
+</Steps>
+
+## Best Practices
+
+### Performance
+
+- **Cache aggressively** - ČSFD data doesn't change frequently
+- **Debounce searches** - Wait for user to finish typing
+- **Lazy load** - Only fetch data when needed (on hover, click, etc.)
+- **Batch requests** - Combine multiple searches when possible
+
+### User Experience
+
+- **Show loading states** - Display spinner while fetching
+- **Handle errors gracefully** - Don't break the page if API fails
+- **Provide fallbacks** - Work even if ČSFD is unreachable
+- **Respect user preferences** - Allow users to disable features
+
+### Security
+
+- **Sanitize data** - Never inject raw HTML from API responses
+- **Validate inputs** - Check movie titles before searching
+- **Use CSP** - Configure Content Security Policy in manifest
+- **Minimize permissions** - Only request what you need
+
+```json manifest.json
+{
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
+```
+
+## Troubleshooting
+
+### Extension doesn't load
+
+**Check**:
+- Manifest JSON is valid
+- All required files exist
+- No syntax errors in scripts
+
+### CORS errors
+
+**Solution**:
+- Ensure `host_permissions` includes ČSFD domain
+- Fetch in background script, not content script
+
+### No data showing
+
+**Debug**:
+```typescript
+// Add logging
+console.log('Searching for:', title);
+const results = await csfd.search(title);
+console.log('Results:', results);
+```
+
+### Rate limited by ČSFD
+
+**Solution**:
+- Implement caching
+- Add delays between requests
+- Use rate limiting queue
+
+## Publishing Your Extension
+
+<Tabs>
+  <Tab title="Chrome Web Store">
+    1. Create developer account at [Chrome Web Store](https://chrome.google.com/webstore/devconsole)
+    2. Pay $5 one-time registration fee
+    3. Prepare assets:
+       - Icon (128x128, 48x48, 16x16)
+       - Screenshots
+       - Description
+    4. Upload ZIP of extension
+    5. Submit for review
+  </Tab>
+  
+  <Tab title="Firefox Add-ons">
+    1. Create account at [Firefox Add-ons](https://addons.mozilla.org/developers/)
+    2. Prepare assets:
+       - Icon (128x128, 48x48)
+       - Screenshots
+       - Description
+    3. Upload XPI file
+    4. Submit for review
+  </Tab>
+</Tabs>
+
+<Warning>
+**Important**: Make it clear in your extension description that this is an unofficial tool and not affiliated with ČSFD.cz.
+</Warning>
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="Netflix ČSFD Extension" icon="github" href="https://github.com/bartholomej/netflix-csfd-ext">
+    Full source code of production extension
+  </Card>
+  <Card title="Chrome Extension Docs" icon="chrome" href="https://developer.chrome.com/docs/extensions/">
+    Official Chrome extension documentation
+  </Card>
+  <Card title="API Reference" icon="book" href="/api/movie">
+    Complete ČSFD API reference
+  </Card>
+  <Card title="Basic Usage" icon="code" href="/examples/basic-usage">
+    Learn the API basics
+  </Card>
+</CardGroup>

@@ -1,0 +1,214 @@
+---
+title: 'Search Types'
+description: 'TypeScript types and interfaces for search results in the ČSFD API'
+---
+
+## Overview
+
+The search types module contains all TypeScript interfaces for search functionality, including search results for movies, TV series, creators, and users.
+
+## CSFDSearch
+
+The main search results container with all result categories.
+
+<ResponseField name="CSFDSearch" type="object">
+  <Expandable title="properties">
+    <ResponseField name="movies" type="CSFDSearchMovie[]" required>
+      Array of movie search results
+    </ResponseField>
+    
+    <ResponseField name="tvSeries" type="CSFDSearchMovie[]" required>
+      Array of TV series search results
+    </ResponseField>
+    
+    <ResponseField name="creators" type="CSFDSearchCreator[]" required>
+      Array of creator (actor, director, etc.) search results
+    </ResponseField>
+    
+    <ResponseField name="users" type="CSFDSearchUser[]" required>
+      Array of ČSFD user search results
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDSearchMovie
+
+Represents a movie or TV series in search results.
+
+<ResponseField name="CSFDSearchMovie" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD movie ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string" required>
+      Movie title
+    </ResponseField>
+    
+    <ResponseField name="year" type="number" required>
+      Release year
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Full ČSFD URL to the movie page
+    </ResponseField>
+    
+    <ResponseField name="type" type="CSFDFilmTypes" required>
+      Type of film (film, series, tv-show, etc.)
+    </ResponseField>
+    
+    <ResponseField name="colorRating" type="CSFDColorRating" required>
+      Overall aggregated rating color: 'bad', 'average', 'good', or 'unknown'
+    </ResponseField>
+    
+    <ResponseField name="poster" type="string" required>
+      URL to the movie poster image
+    </ResponseField>
+    
+    <ResponseField name="origins" type="string[]" required>
+      Countries of origin
+    </ResponseField>
+    
+    <ResponseField name="creators" type="CSFDSearchCreators" required>
+      Main creators (directors and actors)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDSearchCreators
+
+Subset of creators shown in search results (directors and actors only).
+
+<ResponseField name="CSFDSearchCreators" type="object">
+  <Expandable title="properties">
+    <ResponseField name="directors" type="CSFDMovieCreator[]" required>
+      Directors
+    </ResponseField>
+    
+    <ResponseField name="actors" type="CSFDMovieCreator[]" required>
+      Main actors
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDSearchUser
+
+Represents a ČSFD user in search results.
+
+<ResponseField name="CSFDSearchUser" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD user ID
+    </ResponseField>
+    
+    <ResponseField name="user" type="string" required>
+      Username
+    </ResponseField>
+    
+    <ResponseField name="userRealName" type="string" required>
+      User's real name (or empty string)
+    </ResponseField>
+    
+    <ResponseField name="avatar" type="string" required>
+      URL to user's avatar image
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Full URL to user's ČSFD profile
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDSearchCreator
+
+Represents a creator (actor, director, etc.) in search results.
+
+<ResponseField name="CSFDSearchCreator" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD person ID. You can assemble the URL: `https://www.csfd.cz/tvurce/${id}`
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      Creator's name
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Full URL to creator's ČSFD page
+    </ResponseField>
+    
+    <ResponseField name="image" type="string" required>
+      URL to creator's profile image
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Import Example
+
+```typescript
+import type {
+  CSFDSearch,
+  CSFDSearchMovie,
+  CSFDSearchCreator,
+  CSFDSearchUser,
+  CSFDSearchCreators,
+} from 'node-csfd-api';
+```
+
+## TypeScript Interface
+
+```typescript
+import { CSFDScreening } from './global';
+import { CSFDMovieCreator } from './movie';
+
+export interface CSFDSearch {
+  movies: CSFDSearchMovie[];
+  tvSeries: CSFDSearchMovie[];
+  creators: CSFDSearchCreator[];
+  users: CSFDSearchUser[];
+}
+
+export interface CSFDSearchMovie extends CSFDScreening {
+  poster: string;
+  origins: string[];
+  creators: CSFDSearchCreators;
+}
+
+export interface CSFDSearchUser {
+  id: number;
+  user: string;
+  userRealName: string;
+  avatar: string;
+  url: string;
+}
+
+export interface CSFDSearchCreator extends CSFDMovieCreator {
+  image: string;
+}
+
+export interface CSFDSearchCreators {
+  directors: CSFDMovieCreator[];
+  actors: CSFDMovieCreator[];
+}
+```
+
+## Usage Example
+
+```typescript
+import { CSFD } from 'node-csfd-api';
+
+const csfd = new CSFD();
+const results = await csfd.search('Inception');
+
+console.log('Movies:', results.movies.length);
+console.log('TV Series:', results.tvSeries.length);
+console.log('Creators:', results.creators.length);
+console.log('Users:', results.users.length);
+
+// Access movie details
+results.movies.forEach((movie) => {
+  console.log(`${movie.title} (${movie.year})`);
+  console.log(`Rating: ${movie.colorRating}`);
+  console.log(`Directors: ${movie.creators.directors.map(d => d.name).join(', ')}`);
+});
+```

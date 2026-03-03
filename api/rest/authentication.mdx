@@ -1,0 +1,291 @@
+---
+title: Authentication
+description: Understanding authentication for the CSFD REST API
+icon: "key"
+---
+
+## No Authentication Required by Default
+
+The CSFD REST API **does not require authentication** by default. This is a scraping-based API that fetches publicly available data from CSFD.cz, making it easy to get started without managing API keys or tokens.
+
+```bash
+# Works immediately without any authentication
+curl http://localhost:3000/movie/535121
+```
+
+<Note>
+  The API scrapes public CSFD data. No login or authentication is needed to fetch movie information, search results, or creator details.
+</Note>
+
+---
+
+## Optional API Key Protection
+
+When deploying your own REST API server, you can optionally enable API key protection to control access. This is particularly useful when:
+
+- Running a public-facing server
+- Sharing the API with specific clients
+- Preventing unauthorized usage
+- Implementing basic access control
+
+### Enabling API Key Protection
+
+Set the `API_KEY` environment variable when starting the server:
+
+```bash
+# Single API key
+API_KEY=your-secret-key-here npx node-csfd-api server
+
+# Multiple API keys (comma, semicolon, or space-separated)
+API_KEY=key1,key2,key3 npx node-csfd-api server
+```
+
+### Using Custom Header Name
+
+By default, the API expects the key in the `x-api-key` header. You can customize this:
+
+```bash
+API_KEY=mysecret API_KEY_NAME=Authorization npx node-csfd-api server
+```
+
+### Making Authenticated Requests
+
+Once API key protection is enabled, include the key in request headers:
+
+```bash
+curl -H "x-api-key: your-secret-key-here" \
+  http://localhost:3000/movie/535121
+```
+
+```bash
+# With custom header name
+curl -H "Authorization: mysecret" \
+  http://localhost:3000/search/tarantino
+```
+
+```javascript
+// JavaScript/Node.js example
+const response = await fetch('http://localhost:3000/movie/535121', {
+  headers: {
+    'x-api-key': 'your-secret-key-here'
+  }
+});
+```
+
+```python
+# Python example
+import requests
+
+response = requests.get(
+    'http://localhost:3000/movie/535121',
+    headers={'x-api-key': 'your-secret-key-here'}
+)
+```
+
+---
+
+## Error Responses
+
+### Missing API Key
+
+When API key protection is enabled but no key is provided:
+
+```json
+{
+  "error": "API_KEY_MISSING",
+  "message": "Missing API key in request header: x-api-key"
+}
+```
+
+HTTP Status: `401 Unauthorized`
+
+### Invalid API Key
+
+When the provided API key doesn't match any configured keys:
+
+```json
+{
+  "error": "API_KEY_INVALID",
+  "message": "Invalid API key in request header: x-api-key"
+}
+```
+
+HTTP Status: `401 Unauthorized`
+
+---
+
+## Docker Configuration
+
+When running the API in Docker, pass environment variables:
+
+```bash
+docker run -p 3000:3000 \
+  -e API_KEY=your-secret-key \
+  bartholomej/node-csfd-api
+```
+
+```yaml
+# docker-compose.yml
+services:
+  csfd-api:
+    image: bartholomej/node-csfd-api
+    ports:
+      - "3000:3000"
+    environment:
+      - API_KEY=your-secret-key
+      - API_KEY_NAME=x-api-key
+```
+
+---
+
+## Environment Variables
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|----------|
+| `API_KEY` | API key(s) for authentication. Multiple keys can be separated by comma, semicolon, or space | (none) | `secret123` or `key1,key2` |
+| `API_KEY_NAME` | HTTP header name for the API key | `x-api-key` | `Authorization` |
+| `PORT` | Server port | `3000` | `8080` |
+| `LANGUAGE` | Default language for responses | (none) | `cs`, `en`, `sk` |
+
+---
+
+## Best Practices for Deployment
+
+### 1. Always Use API Keys in Production
+
+<Warning>
+  If you deploy the REST API publicly without API key protection, **anyone can use your server**. This could lead to excessive traffic, increased costs, or your server being blocked by CSFD.
+</Warning>
+
+```bash
+# Good - Protected
+API_KEY=strong-random-key-here npm start
+
+# Bad - Open to the world
+npm start
+```
+
+### 2. Use Strong, Random Keys
+
+Generate cryptographically secure API keys:
+
+```bash
+# Generate a random key (Linux/macOS)
+openssl rand -hex 32
+
+# Or use Node.js
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### 3. Rotate Keys Regularly
+
+Update your API keys periodically and distribute new keys to authorized clients.
+
+### 4. Use HTTPS in Production
+
+API keys transmitted over HTTP can be intercepted. Always use a reverse proxy with SSL/TLS:
+
+```nginx
+# nginx example
+server {
+    listen 443 ssl;
+    server_name api.yourdomain.com;
+    
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+    
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+### 5. Consider Additional Security Layers
+
+For production deployments, consider:
+
+- **Reverse proxy** (nginx, Traefik) with IP filtering
+- **API gateway** (Kong, AWS API Gateway) with advanced auth
+- **Rate limiting** (see [Rate Limiting](/api/rest/rate-limiting))
+- **WAF** (Web Application Firewall) for additional protection
+- **VPN** or **firewall rules** for internal-only APIs
+
+---
+
+## CSFD Terms of Service
+
+<Warning>
+  This is a web scraping library. While it accesses only public data, you should:
+  
+  - Respect CSFD's terms of service
+  - Implement appropriate rate limiting
+  - Cache responses when possible
+  - Avoid excessive requests
+  - Use responsibly and ethically
+</Warning>
+
+### Responsible Usage Guidelines
+
+1. **Cache responses** - Don't fetch the same data repeatedly
+2. **Rate limit requests** - Add delays between requests (2+ seconds recommended)
+3. **Monitor your usage** - Keep track of request volumes
+4. **Respect robots.txt** - Be a good internet citizen
+5. **Don't monetize scraped data** - CSFD owns the data rights
+
+### When Scraping is Appropriate
+
+- Personal projects and learning
+- Browser extensions for personal use
+- Academic research
+- Non-commercial applications
+- Integrations that add value for users
+
+### When to Avoid Scraping
+
+- Commercial products selling CSFD data
+- High-volume data mining operations
+- Applications that compete with CSFD
+- Anything that could harm CSFD's service
+
+<Note>
+  This library makes scraping easier, but **you** are responsible for how you use it. Always respect the source and use responsibly.
+</Note>
+
+---
+
+## Library vs Server Authentication
+
+It's important to understand the difference:
+
+| Aspect | node-csfd-api Library | REST API Server |
+|--------|----------------------|------------------|
+| **Authentication to CSFD** | None required (scrapes public data) | None required (scrapes public data) |
+| **Your API Authentication** | N/A - it's a library | Optional via `API_KEY` env var |
+| **Use Case** | Integrating into your own app | Exposing as a service to others |
+| **Security Responsibility** | Your application handles it | Configure via environment variables |
+
+```typescript
+// Using the library directly - no auth needed
+import { csfd } from 'node-csfd-api';
+const movie = await csfd.movie(535121);
+```
+
+```bash
+# Running the REST server - can add auth
+API_KEY=secret123 npx node-csfd-api server
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Endpoints" icon="list" href="/api/rest/endpoints">
+    Explore all available REST API endpoints
+  </Card>
+  <Card title="Rate Limiting" icon="gauge" href="/api/rest/rate-limiting">
+    Learn about rate limiting and responsible usage
+  </Card>
+</CardGroup>

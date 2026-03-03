@@ -1,0 +1,313 @@
+---
+title: 'MCP Tools'
+description: 'Available tools in the ČSFD MCP Server for AI agents'
+---
+
+The ČSFD MCP Server provides 6 tools that allow AI agents like Claude to interact with the ČSFD database. Each tool maps to a specific API function and returns structured data.
+
+## Available Tools
+
+### search
+
+Searches for movies, TV series, or people on ČSFD. This is typically the **first tool** you should use to find IDs needed for other tools.
+
+<ParamField path="query" type="string" required>
+  Search query - can be a movie title, TV series name, or person name (actor, director, etc.)
+</ParamField>
+
+**Returns:**
+- `movies[]`: Array of movie results with IDs
+- `tvSeries[]`: Array of TV series results with IDs
+- `users[]`: Array of user profiles
+
+**Example Usage:**
+```javascript
+// Search for a movie
+{
+  "query": "Pulp Fiction"
+}
+
+// Search for a person
+{
+  "query": "Quentin Tarantino"
+}
+```
+
+**Response:**
+```json
+{
+  "movies": [
+    {
+      "id": 8852,
+      "title": "Pulp Fiction: Historky z podsvětí",
+      "year": "1994",
+      "type": "film",
+      "colorRating": "good",
+      "rating": 88
+    }
+  ],
+  "tvSeries": [],
+  "users": []
+}
+```
+
+---
+
+### get_movie
+
+Retrieves detailed information about a specific movie or TV series. Requires a ČSFD ID obtained from the search tool.
+
+<ParamField path="id" type="number" required>
+  ČSFD Movie ID (found using the 'search' tool)
+</ParamField>
+
+**Returns:**
+- `id`: Movie ID
+- `title`: Movie title
+- `year`: Release year
+- `rating`: ČSFD rating (0-100)
+- `genres[]`: Array of genres
+- `plot`: Movie description
+- `creators`: Directors, actors, writers, composers, producers
+- `poster`: Poster image URL
+- `vod[]`: Available VOD platforms
+- `premieres[]`: Premiere dates by country
+- And many more fields...
+
+**Example Usage:**
+```javascript
+{
+  "id": 535121
+}
+```
+
+**Response:**
+```json
+{
+  "id": 535121,
+  "title": "Na špatné straně",
+  "year": "2018",
+  "rating": 73,
+  "genres": ["Krimi", "Drama", "Thriller"],
+  "creators": {
+    "directors": [{"id": 87470, "name": "S. Craig Zahler"}],
+    "actors": [{"id": 1, "name": "Mel Gibson"}]
+  }
+}
+```
+
+---
+
+### get_creator
+
+Retrieves information about a specific creator (actor, director, writer, etc.). Requires a ČSFD Creator ID.
+
+<ParamField path="id" type="number" required>
+  ČSFD Creator ID (found using the 'search' tool)
+</ParamField>
+
+**Returns:**
+- `id`: Creator ID
+- `name`: Full name
+- `bio`: Biography text
+- `birthday`: Date of birth
+- `birthplace`: Place of birth
+- `films[]`: Filmography with ratings
+- `photo`: Profile photo URL
+
+**Example Usage:**
+```javascript
+{
+  "id": 2120
+}
+```
+
+**Response:**
+```json
+{
+  "id": 2120,
+  "name": "Quentin Tarantino",
+  "birthday": "27.03.1963",
+  "birthplace": "Knoxville, Tennessee, USA",
+  "films": [
+    {"id": 527699, "title": "Tenkrát v Hollywoodu", "year": 2019}
+  ]
+}
+```
+
+---
+
+### get_user_ratings
+
+Retrieves movie ratings from a specific ČSFD user. Returns a list of movies with their user rating (0-5 stars).
+
+<ParamField path="user" type="string | number" required>
+  ČSFD User ID (numeric) or username
+</ParamField>
+
+<ParamField path="page" type="number">
+  Page number to fetch (default: 1)
+</ParamField>
+
+<ParamField path="allPages" type="boolean">
+  Fetch all pages at once (use wisely, may be slow)
+</ParamField>
+
+<ParamField path="allPagesDelay" type="number">
+  Delay in milliseconds between page requests when using allPages
+</ParamField>
+
+<ParamField path="excludes" type="string[]">
+  Film types to exclude (e.g. `["series", "tv-film"]`)
+</ParamField>
+
+<ParamField path="includesOnly" type="string[]">
+  Only include these film types (e.g. `["film"]`)
+</ParamField>
+
+**Returns:**
+Array of rated movies with:
+- `title`: Movie title
+- `year`: Release year
+- `type`: Content type (film, series, etc.)
+- `userRating`: User's rating (1-5 stars)
+- `userDate`: Date when rated
+- `colorRating`: ČSFD community rating color
+
+**Example Usage:**
+```javascript
+// Basic usage
+{
+  "user": "912"
+}
+
+// With pagination
+{
+  "user": "912-bart",
+  "page": 2
+}
+
+// Filter to only films
+{
+  "user": "912",
+  "includesOnly": ["film"]
+}
+```
+
+---
+
+### get_user_reviews
+
+Retrieves movie reviews written by a specific ČSFD user. Returns a list of movies with their review text and rating.
+
+<ParamField path="user" type="string | number" required>
+  ČSFD User ID (numeric) or username
+</ParamField>
+
+<ParamField path="page" type="number">
+  Page number to fetch (default: 1)
+</ParamField>
+
+<ParamField path="allPages" type="boolean">
+  Fetch all pages at once (use wisely, may be slow)
+</ParamField>
+
+<ParamField path="allPagesDelay" type="number">
+  Delay in milliseconds between page requests when using allPages
+</ParamField>
+
+<ParamField path="excludes" type="string[]">
+  Film types to exclude (e.g. `["series", "tv-film"]`)
+</ParamField>
+
+<ParamField path="includesOnly" type="string[]">
+  Only include these film types (e.g. `["film"]`)
+</ParamField>
+
+**Returns:**
+Array of reviews with:
+- `id`: Review ID
+- `title`: Movie title
+- `year`: Release year
+- `text`: Review text content
+- `userRating`: User's rating (1-5 stars)
+- `userDate`: Date when reviewed
+- `poster`: Movie poster URL
+
+**Example Usage:**
+```javascript
+// Basic usage
+{
+  "user": 195357
+}
+
+// With filtering
+{
+  "user": "195357-verbal",
+  "excludes": ["series", "episode"]
+}
+```
+
+---
+
+### get_cinemas
+
+Retrieves cinema screenings for a given district in Czech Republic. Returns a list of cinemas with their current screenings and showtimes.
+
+<ParamField path="district" type="string | number" required>
+  District ID (numeric) or district name
+</ParamField>
+
+<ParamField path="period" type="enum" required>
+  Time period for screenings. Options: `"today"`, `"tomorrow"`, `"weekend"`, `"week"`, `"month"`
+</ParamField>
+
+**Returns:**
+Array of cinema screenings with:
+- Cinema name and location
+- Movie names and IDs
+- Showtimes
+- Screening details
+
+**Example Usage:**
+```javascript
+// Get today's screenings in Prague
+{
+  "district": "Praha",
+  "period": "today"
+}
+
+// Get weekend screenings by district ID
+{
+  "district": 1,
+  "period": "weekend"
+}
+```
+
+---
+
+## Tool Workflow
+
+Typical workflow when using these tools:
+
+<Steps>
+  <Step title="Search for content">
+    Use `search` to find the movie, series, or person you're interested in. Extract the ID from the results.
+  </Step>
+  
+  <Step title="Get detailed information">
+    Use `get_movie` or `get_creator` with the ID to retrieve comprehensive details.
+  </Step>
+  
+  <Step title="Explore related data">
+    Use `get_user_ratings` or `get_user_reviews` to see what users think about movies.
+  </Step>
+</Steps>
+
+<Note>
+  All tools are **read-only** and **idempotent** - they don't modify any data and can be called multiple times safely.
+</Note>
+
+<Info>
+  When using `allPages` parameter, always include `allPagesDelay` (recommended: 2000ms) to avoid rate limiting.
+</Info>

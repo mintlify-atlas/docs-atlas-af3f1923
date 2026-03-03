@@ -1,0 +1,261 @@
+---
+title: Export Ratings
+description: Export your ČSFD ratings to CSV, JSON, or Letterboxd format
+---
+
+The `export ratings` command allows you to backup and export your personal ČSFD ratings in multiple formats.
+
+## Basic Usage
+
+```bash
+npx node-csfd-api export ratings <userId> [options]
+```
+
+<ParamField path="userId" type="number" required>
+  Your ČSFD user ID (numeric only). You can find this in your profile URL.
+</ParamField>
+
+## Format Options
+
+### CSV (Default)
+
+Exports ratings to a standard CSV file with all available fields.
+
+```bash
+npx node-csfd-api export ratings 912
+# or explicitly
+npx node-csfd-api export ratings 912 --csv
+```
+
+**Output file:** `<userId>-ratings.csv`
+
+**Columns:**
+- `id` - ČSFD movie/series ID
+- `title` - Movie/series title
+- `year` - Release year
+- `rating` - Your rating (0-5)
+- `date` - Date you rated it
+- `type` - Content type (film, series, episode, etc.)
+- `url` - ČSFD URL
+- `colorRating` - Overall ČSFD rating tier (good, average, bad)
+
+<CodeGroup>
+```csv Example Output
+id,title,year,rating,date,type,url,colorRating
+812944,"David Attenborough: Život na naší planetě",2020,5,01.11.2020,film,https://www.csfd.cz/film/812944,good
+912552,Coronation,2020,4,28.10.2020,film,https://www.csfd.cz/film/912552,good
+```
+</CodeGroup>
+
+### JSON
+
+Exports ratings as a structured JSON array with full data.
+
+```bash
+npx node-csfd-api export ratings 912 --json
+```
+
+**Output file:** `<userId>-ratings.json`
+
+<CodeGroup>
+```json Example Output
+[
+  {
+    "id": 812944,
+    "title": "David Attenborough: Život na naší planetě",
+    "year": 2020,
+    "type": "film",
+    "url": "https://www.csfd.cz/film/812944",
+    "colorRating": "good",
+    "userDate": "01.11.2020",
+    "userRating": 5
+  },
+  {
+    "id": 912552,
+    "title": "Coronation",
+    "year": 2020,
+    "type": "film",
+    "url": "https://www.csfd.cz/film/912552",
+    "colorRating": "good",
+    "userDate": "28.10.2020",
+    "userRating": 4
+  }
+]
+```
+</CodeGroup>
+
+### Letterboxd
+
+Exports ratings in Letterboxd's import format (CSV with specific columns).
+
+```bash
+npx node-csfd-api export ratings 912 --letterboxd
+```
+
+**Output file:** `<userId>-for-letterboxd.csv`
+
+**Features:**
+- Automatically sets language to English for better Letterboxd matching
+- Only includes films (excludes TV series, episodes, etc.)
+- Uses Letterboxd's required column format
+
+<CodeGroup>
+```csv Letterboxd Format
+Title,Year,Rating,WatchedDate
+"David Attenborough: A Life on Our Planet",2020,5,01.11.2020
+Coronation,2020,4,28.10.2020
+```
+</CodeGroup>
+
+<Note>
+The Letterboxd export automatically filters to include only `film` type entries and switches to English titles for better matching on Letterboxd.
+</Note>
+
+## Complete Examples
+
+<Steps>
+  <Step title="Find Your User ID">
+    Go to your ČSFD profile. The URL will look like:
+    ```
+    https://www.csfd.cz/uzivatel/912-bart/
+    ```
+    Your user ID is `912`.
+  </Step>
+  
+  <Step title="Choose Your Format">
+    Decide which format you need:
+    - **CSV**: For spreadsheet analysis or general backup
+    - **JSON**: For programmatic processing
+    - **Letterboxd**: For importing to Letterboxd
+  </Step>
+  
+  <Step title="Run the Export">
+    <CodeGroup>
+    ```bash CSV
+    npx node-csfd-api export ratings 912
+    ```
+    
+    ```bash JSON
+    npx node-csfd-api export ratings 912 --json
+    ```
+    
+    ```bash Letterboxd
+    npx node-csfd-api export ratings 912 --letterboxd
+    ```
+    </CodeGroup>
+  </Step>
+  
+  <Step title="Wait for Completion">
+    The tool will:
+    1. Fetch all pages of your ratings (with 1-second delay between pages)
+    2. Process and format the data
+    3. Save to a file in your current directory
+    
+    ```bash
+    Fetching ratings for user 912 (CSV)...
+    Fetched 1247 ratings.
+    Saved in file: ./912-ratings.csv
+    ```
+  </Step>
+</Steps>
+
+## Rate Limiting & Performance
+
+<Warning>
+The export tool fetches **all pages** of your ratings automatically. This means:
+- Multiple requests to ČSFD (one per ~25 ratings)
+- Default 1-second delay between requests
+- For 1000+ ratings, this can take several minutes
+</Warning>
+
+**How it works:**
+- The tool uses `allPages: true` internally
+- Default delay: `1000ms` (1 second) between page requests
+- This respects ČSFD's servers and avoids detection
+
+<Note>
+Be patient! For large rating collections (500+ items), the export may take 2-5 minutes. This delay is intentional to avoid overloading ČSFD's servers.
+</Note>
+
+## Output Location
+
+All files are saved in your **current working directory**:
+
+```bash
+.
+├── 912-ratings.csv          # CSV export
+├── 912-ratings.json         # JSON export
+└── 912-for-letterboxd.csv   # Letterboxd export
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Error: Please provide a valid numeric User ID">
+    Make sure you're using the numeric ID, not the username:
+    
+    ```bash
+    # ❌ Wrong
+    npx node-csfd-api export ratings bart
+    
+    # ✅ Correct
+    npx node-csfd-api export ratings 912
+    ```
+  </Accordion>
+  
+  <Accordion title="Export is taking too long">
+    This is normal for large collections. The tool:
+    - Fetches ~25 ratings per request
+    - Waits 1 second between requests
+    - For 500 ratings: ~20 requests × 1s = ~20 seconds minimum
+    
+    **Don't interrupt the process!**
+  </Accordion>
+  
+  <Accordion title="Missing ratings in Letterboxd export">
+    The Letterboxd export only includes entries of type `film`. It automatically excludes:
+    - TV series
+    - Episodes
+    - TV movies
+    - Other non-film content
+    
+    This is intentional as Letterboxd primarily focuses on films.
+  </Accordion>
+  
+  <Accordion title="CSV contains special characters incorrectly">
+    The CSV files use UTF-8 encoding with proper escaping. If viewing in Excel:
+    1. Open Excel
+    2. Use "Data" → "From Text/CSV"
+    3. Select UTF-8 encoding
+    4. Import
+  </Accordion>
+</AccordionGroup>
+
+## Advanced: Programmatic Usage
+
+If you're using the library in code, you can import the export function directly:
+
+```typescript
+import { runRatingsExport } from 'node-csfd-api/dist/bin/export-ratings';
+
+await runRatingsExport(912, {
+  format: 'json',
+  userRatingsOptions: {
+    allPages: true,
+    allPagesDelay: 2000, // 2 seconds between pages
+    includesOnly: ['film', 'series']
+  }
+});
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="User Ratings API" icon="code" href="/api/user-ratings">
+    Learn about the underlying API used by the export tool
+  </Card>
+  
+  <Card title="CLI Overview" icon="terminal" href="/cli/overview">
+    Explore other CLI commands
+  </Card>
+</CardGroup>

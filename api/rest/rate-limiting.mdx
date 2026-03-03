@@ -1,0 +1,522 @@
+---
+title: Rate Limiting
+description: Implementing rate limiting and responsible scraping practices
+icon: "gauge"
+---
+
+## No Built-in Rate Limiting
+
+The CSFD REST API server **does not enforce rate limits by default**. This gives you complete control over how you manage request throttling and allows you to implement rate limiting strategies that fit your specific use case.
+
+<Warning>
+  While the API doesn't enforce rate limits, **CSFD.cz itself may block excessive requests**. It's your responsibility to implement appropriate rate limiting to avoid being blocked.
+</Warning>
+
+---
+
+## Why Rate Limiting Matters
+
+### CSFD's Perspective
+
+- CSFD.cz is a web service that costs money to operate
+- Excessive scraping can impact their server performance
+- They may implement IP blocking for abusive behavior
+- Respect for their infrastructure ensures continued access
+
+### Your Perspective
+
+- **Avoid IP bans** - Getting blocked disrupts your application
+- **Maintain reliability** - Consistent, moderate usage is more reliable than bursts
+- **Be a good citizen** - Responsible usage benefits everyone
+- **Legal and ethical** - Excessive scraping may violate terms of service
+
+---
+
+## Recommended Rate Limits
+
+### Conservative (Recommended)
+
+```
+1 request every 2-3 seconds
+~20-30 requests per minute
+~1,200-1,800 requests per hour
+```
+
+Best for:
+- Production applications
+- Long-running data collection
+- Public-facing services
+
+### Moderate
+
+```
+1 request per second
+60 requests per minute
+3,600 requests per hour
+```
+
+Best for:
+- Development and testing
+- Personal projects
+- Low-volume applications
+
+### Aggressive (Use with Caution)
+
+```
+Multiple requests per second
+```
+
+<Warning>
+  Only use aggressive rate limiting for:
+  - One-time data migrations
+  - Development testing
+  - With proper exponential backoff
+  - When you're prepared to handle IP blocks
+</Warning>
+
+---
+
+## Implementing Rate Limiting
+
+### Using the Library with allPagesDelay
+
+When fetching multiple pages of user data, use the built-in `allPagesDelay` option:
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+// Fetch all user ratings with 2-second delay between pages
+const ratings = await csfd.userRatings('912-bart', {
+  allPages: true,
+  allPagesDelay: 2000 // 2 seconds
+});
+
+// Fetch all reviews with 3-second delay
+const reviews = await csfd.userReviews('195357', {
+  allPages: true,
+  allPagesDelay: 3000 // 3 seconds
+});
+```
+
+<Tip>
+  When using `allPages: true`, **always** set an `allPagesDelay` of at least 2000ms (2 seconds) to avoid overwhelming CSFD's servers.
+</Tip>
+
+### REST API Query Parameters
+
+```bash
+# Fetch all ratings with 2-second delay between pages
+curl "http://localhost:3000/user-ratings/912-bart?allPages=true&allPagesDelay=2000"
+
+# Fetch all reviews with 3-second delay
+curl "http://localhost:3000/user-reviews/195357?allPages=true&allPagesDelay=3000"
+```
+
+---
+
+## Express Middleware for Rate Limiting
+
+The server includes commented-out rate limiting middleware. You can enable and customize it:
+
+### Built-in Rate Limiter (Commented Out)
+
+In `src/bin/server.ts`, the following rate limiting code is available but commented out:
+
+```typescript
+import rateLimit from 'express-rate-limit';
+import slowDown from 'express-slow-down';
+
+// Hard limit: 300 requests per 15 minutes
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // 300 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'TOO_MANY_REQUESTS',
+    message: 'Too many requests from this IP. Please try again after 15 minutes.'
+  }
+});
+
+// Soft limit: Slow down after 10 requests
+const speedLimiter = slowDown({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  delayAfter: 10, // First 10 requests are free
+  delayMs: (hits) => Math.min(hits * 150, 6000) // Increase delay by 150ms per request, max 6s
+});
+
+app.use(speedLimiter);
+app.use(limiter);
+```
+
+### Enabling Rate Limiting
+
+To enable, uncomment these lines in the server code:
+
+1. Clone the repository
+2. Edit `src/bin/server.ts`
+3. Uncomment the rate limiting middleware
+4. Install dependencies: `npm install express-rate-limit express-slow-down`
+5. Rebuild: `npm run build:server`
+
+### Custom Rate Limiting Example
+
+Implement your own rate limiting middleware:
+
+```typescript
+import rateLimit from 'express-rate-limit';
+
+// Conservative: 30 requests per minute
+const limiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 requests per minute
+  message: {
+    error: 'TOO_MANY_REQUESTS',
+    message: 'Rate limit exceeded. Please slow down.'
+  },
+  // Custom key generator (e.g., by API key instead of IP)
+  keyGenerator: (req) => {
+    return req.get('x-api-key') || req.ip;
+  }
+});
+
+app.use('/movie', limiter);
+app.use('/search', limiter);
+app.use('/creator', limiter);
+app.use('/user-ratings', limiter);
+app.use('/user-reviews', limiter);
+```
+
+### Per-Endpoint Rate Limits
+
+Apply different limits to different endpoints:
+
+```typescript
+// Strict limits for expensive operations
+const strictLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10 // Only 10 requests per minute
+});
+
+// Relaxed limits for cheap operations
+const relaxedLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60 // 60 requests per minute
+});
+
+app.use('/user-ratings', strictLimiter);
+app.use('/user-reviews', strictLimiter);
+app.use('/movie', relaxedLimiter);
+app.use('/search', relaxedLimiter);
+```
+
+---
+
+## Client-Side Rate Limiting
+
+When using the library directly in your application, implement client-side throttling:
+
+### Simple Delay Function
+
+```typescript
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function fetchMoviesWithDelay(movieIds: number[]) {
+  const movies = [];
+  
+  for (const id of movieIds) {
+    const movie = await csfd.movie(id);
+    movies.push(movie);
+    
+    // Wait 2 seconds before next request
+    await delay(2000);
+  }
+  
+  return movies;
+}
+```
+
+### Using p-limit for Concurrency Control
+
+```typescript
+import pLimit from 'p-limit';
+
+// Allow only 1 concurrent request
+const limit = pLimit(1);
+
+async function fetchMoviesConcurrently(movieIds: number[]) {
+  const promises = movieIds.map(id => 
+    limit(async () => {
+      const movie = await csfd.movie(id);
+      await delay(2000); // 2-second delay between requests
+      return movie;
+    })
+  );
+  
+  return Promise.all(promises);
+}
+```
+
+### Using p-queue for Advanced Queuing
+
+```typescript
+import PQueue from 'p-queue';
+
+const queue = new PQueue({
+  concurrency: 1, // One request at a time
+  interval: 2000, // Minimum 2 seconds between requests
+  intervalCap: 1
+});
+
+async function fetchMovie(id: number) {
+  return queue.add(() => csfd.movie(id));
+}
+
+// Queue multiple requests
+const movie1 = fetchMovie(535121);
+const movie2 = fetchMovie(8852);
+const movie3 = fetchMovie(2120);
+
+const [m1, m2, m3] = await Promise.all([movie1, movie2, movie3]);
+```
+
+---
+
+## Exponential Backoff
+
+Implement exponential backoff to handle temporary failures gracefully:
+
+```typescript
+async function fetchWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries = 5,
+  initialDelay = 1000
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      
+      if (i === maxRetries - 1) {
+        throw lastError;
+      }
+      
+      // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+      const delayMs = initialDelay * Math.pow(2, i);
+      console.log(`Retry ${i + 1}/${maxRetries} after ${delayMs}ms`);
+      await delay(delayMs);
+    }
+  }
+  
+  throw lastError!;
+}
+
+// Usage
+const movie = await fetchWithBackoff(() => csfd.movie(535121));
+```
+
+---
+
+## Caching Strategies
+
+Reduce API calls by caching responses:
+
+### In-Memory Cache
+
+```typescript
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+async function getCachedMovie(id: number) {
+  const key = `movie-${id}`;
+  const cached = cache.get(key);
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    console.log('Cache hit');
+    return cached.data;
+  }
+  
+  console.log('Cache miss - fetching');
+  const movie = await csfd.movie(id);
+  cache.set(key, { data: movie, timestamp: Date.now() });
+  
+  return movie;
+}
+```
+
+### Redis Cache
+
+```typescript
+import Redis from 'ioredis';
+
+const redis = new Redis();
+const CACHE_TTL = 3600; // 1 hour in seconds
+
+async function getCachedMovie(id: number) {
+  const key = `csfd:movie:${id}`;
+  
+  // Try cache first
+  const cached = await redis.get(key);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+  
+  // Fetch and cache
+  const movie = await csfd.movie(id);
+  await redis.setex(key, CACHE_TTL, JSON.stringify(movie));
+  
+  return movie;
+}
+```
+
+### File-Based Cache
+
+```typescript
+import fs from 'fs/promises';
+import path from 'path';
+
+const CACHE_DIR = './cache';
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+async function getCachedMovie(id: number) {
+  const cacheFile = path.join(CACHE_DIR, `movie-${id}.json`);
+  
+  try {
+    const stats = await fs.stat(cacheFile);
+    if (Date.now() - stats.mtimeMs < CACHE_TTL) {
+      const data = await fs.readFile(cacheFile, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    // Cache miss or error
+  }
+  
+  const movie = await csfd.movie(id);
+  await fs.mkdir(CACHE_DIR, { recursive: true });
+  await fs.writeFile(cacheFile, JSON.stringify(movie, null, 2));
+  
+  return movie;
+}
+```
+
+---
+
+## Monitoring and Logging
+
+Track your request patterns:
+
+```typescript
+class RequestLogger {
+  private requestTimes: number[] = [];
+  
+  logRequest() {
+    this.requestTimes.push(Date.now());
+    
+    // Keep only last hour of data
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    this.requestTimes = this.requestTimes.filter(t => t > oneHourAgo);
+  }
+  
+  getStats() {
+    const now = Date.now();
+    const lastMinute = this.requestTimes.filter(t => now - t < 60 * 1000).length;
+    const lastHour = this.requestTimes.length;
+    
+    return {
+      requestsLastMinute: lastMinute,
+      requestsLastHour: lastHour,
+      avgPerMinute: lastHour / 60
+    };
+  }
+}
+
+const logger = new RequestLogger();
+
+async function fetchMovie(id: number) {
+  logger.logRequest();
+  const stats = logger.getStats();
+  console.log(`Requests - Last minute: ${stats.requestsLastMinute}, Last hour: ${stats.requestsLastHour}`);
+  
+  return csfd.movie(id);
+}
+```
+
+---
+
+## Best Practices Summary
+
+<CardGroup cols={2}>
+  <Card title="Always Use Delays" icon="clock">
+    When fetching multiple pages, use `allPagesDelay` of at least 2000ms
+  </Card>
+  
+  <Card title="Cache Responses" icon="database">
+    Don't fetch the same data repeatedly - implement caching
+  </Card>
+  
+  <Card title="Monitor Usage" icon="chart-line">
+    Track your request patterns to stay within reasonable limits
+  </Card>
+  
+  <Card title="Exponential Backoff" icon="arrows-rotate">
+    Implement retry logic with increasing delays for failed requests
+  </Card>
+</CardGroup>
+
+### Quick Checklist
+
+- Use `allPagesDelay: 2000` or higher when fetching multiple pages
+- Implement caching to reduce duplicate requests
+- Add delays between sequential requests (2+ seconds)
+- Use exponential backoff for retries
+- Monitor your request volume
+- Never exceed 1 request per second sustained
+- Be prepared to handle rate limit errors gracefully
+
+<Warning>
+  Getting blocked by CSFD can disrupt your application. It's **always** better to be conservative with request rates than to risk an IP ban.
+</Warning>
+
+---
+
+## Handling Rate Limit Errors
+
+If you do get rate limited, handle it gracefully:
+
+```typescript
+import { CSFDError } from 'node-csfd-api';
+
+async function fetchWithRateLimitHandling(id: number) {
+  try {
+    return await csfd.movie(id);
+  } catch (error) {
+    if (error instanceof CSFDError) {
+      // Could be rate limited or blocked
+      console.error('CSFD Error:', error.message);
+      
+      // Wait longer and retry
+      console.log('Waiting 30 seconds before retry...');
+      await delay(30000);
+      
+      return csfd.movie(id);
+    }
+    throw error;
+  }
+}
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Endpoints" icon="list" href="/api/rest/endpoints">
+    Explore all available REST API endpoints
+  </Card>
+  <Card title="Authentication" icon="key" href="/api/rest/authentication">
+    Learn about optional API key authentication
+  </Card>
+</CardGroup>

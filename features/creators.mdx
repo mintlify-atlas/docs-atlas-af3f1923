@@ -1,0 +1,245 @@
+---
+title: Creators
+description: Get detailed information about directors, actors, and other film creators
+---
+
+The `creator()` method retrieves comprehensive information about a creator (director, actor, writer, etc.) including their biography, filmography, and personal details.
+
+## Method Signature
+
+```typescript
+csfd.creator(id: number, options?: CSFDOptions): Promise<CSFDCreator>
+```
+
+## Parameters
+
+<ParamField path="id" type="number" required>
+  The ČSFD creator ID. You can find this in the creator's URL (e.g., `2120` from `https://www.csfd.cz/tvurce/2120-quentin-tarantino/`)
+</ParamField>
+
+<ParamField path="options" type="CSFDOptions">
+  Optional configuration object
+  
+  <Expandable title="properties">
+    <ParamField path="language" type="'cs' | 'en' | 'sk'">
+      Language variant to use. Defaults to `'cs'` (Czech)
+    </ParamField>
+    
+    <ParamField path="request" type="object">
+      Custom request options (headers, cookies, etc.)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return Type
+
+<ResponseField name="CSFDCreator" type="object">
+  Complete creator information object
+  
+  <Expandable title="properties">
+    <ResponseField name="id" type="number">
+      ČSFD creator ID
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Creator's full name
+    </ResponseField>
+    
+    <ResponseField name="birthday" type="string | null">
+      Birth date in format "DD.MM.YYYY" (e.g., "27.03.1963")
+    </ResponseField>
+    
+    <ResponseField name="birthplace" type="string">
+      Place of birth (e.g., "Knoxville, Tennessee, USA")
+    </ResponseField>
+    
+    <ResponseField name="photo" type="string">
+      URL to creator's profile photo
+    </ResponseField>
+    
+    <ResponseField name="age" type="number | string">
+      Current age or age at death
+    </ResponseField>
+    
+    <ResponseField name="bio" type="string">
+      Biography text (may be truncated with ellipsis)
+    </ResponseField>
+    
+    <ResponseField name="films" type="CSFDCreatorScreening[]">
+      Filmography - array of movies/shows the creator worked on
+      
+      <Expandable title="properties">
+        <ResponseField name="id" type="number">
+          Movie/show ID
+        </ResponseField>
+        
+        <ResponseField name="title" type="string">
+          Movie/show title
+        </ResponseField>
+        
+        <ResponseField name="year" type="number">
+          Release year
+        </ResponseField>
+        
+        <ResponseField name="colorRating" type="'bad' | 'average' | 'good' | 'unknown'">
+          Overall rating quality indicator
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Usage Examples
+
+<Tabs>
+  <Tab title="Basic Usage">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Get Quentin Tarantino's information
+    const creator = await csfd.creator(2120);
+    
+    console.log(creator.name);       // "Quentin Tarantino"
+    console.log(creator.birthday);   // "27.03.1963"
+    console.log(creator.birthplace); // "Knoxville, Tennessee, USA"
+    console.log(creator.age);        // 58
+    ```
+  </Tab>
+  
+  <Tab title="Filmography">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const creator = await csfd.creator(2120);
+    
+    // Access filmography
+    console.log(`${creator.name} has ${creator.films.length} films`);
+    
+    // List all films
+    creator.films.forEach(film => {
+      console.log(`${film.title} (${film.year}) - ${film.colorRating}`);
+    });
+    ```
+  </Tab>
+  
+  <Tab title="Biography">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const creator = await csfd.creator(2120);
+    
+    console.log(`Name: ${creator.name}`);
+    console.log(`Born: ${creator.birthday} in ${creator.birthplace}`);
+    console.log(`Age: ${creator.age}`);
+    console.log(`\nBio:\n${creator.bio}`);
+    ```
+  </Tab>
+  
+  <Tab title="Filter Filmography">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const creator = await csfd.creator(2120);
+    
+    // Get only highly rated films
+    const bestFilms = creator.films.filter(
+      film => film.colorRating === 'good'
+    );
+    
+    console.log('Best rated films:');
+    bestFilms.forEach(film => {
+      console.log(`- ${film.title} (${film.year})`);
+    });
+    ```
+  </Tab>
+</Tabs>
+
+<Accordion title="Example Response">
+```json
+{
+  "id": 2120,
+  "name": "Quentin Tarantino",
+  "birthday": "27.03.1963",
+  "birthplace": "Knoxville, Tennessee, USA",
+  "photo": "https://image.pmgstatic.com/cache/resized/w100h132crop/files/images/creator/photos/164/515/164515525_b98f8a.jpg",
+  "age": 58,
+  "bio": "Quentin Tarantino se narodil 27. března roku 1963 v americkém Knoxville teprve šestnáctileté Connie Tarantinové. Své jméno Quentin dostal podle matčiny oblíbené televizní postavy Quinta ze seriálu \"Gunsmoke\". Quentinův otec byl jistý Tony Tarantino, který rodinu opustil když byl Quentin ještě malinký. Jeho dětství a dospívání ovlivnily nejen filmy, ale pop kultura obecně. Televizní seriály, komiksy, populární hudba, to vše jako mladý hltal ve velkém a stále neměl…",
+  "films": [
+    {
+      "id": 527699,
+      "title": "Tenkrát v Hollywoodu",
+      "year": 2019,
+      "colorRating": "good"
+    },
+    {
+      "id": 362228,
+      "title": "Osm hrozných",
+      "year": 2015,
+      "colorRating": "good"
+    },
+    {
+      "id": 294824,
+      "title": "Nespoutaný Django",
+      "year": 2012,
+      "colorRating": "good"
+    },
+    {
+      "id": 117077,
+      "title": "Hanebný pancharti",
+      "year": 2009,
+      "colorRating": "good"
+    },
+    {
+      "id": 229384,
+      "title": "Grindhouse: Auto zabiják",
+      "year": 2007,
+      "colorRating": "average"
+    },
+    {
+      "id": 178904,
+      "title": "Sin City - město hříchu",
+      "year": 2005,
+      "colorRating": "good"
+    },
+    {
+      "id": 136304,
+      "title": "Kill Bill 2",
+      "year": 2004,
+      "colorRating": "good"
+    },
+    {
+      "id": 43483,
+      "title": "Kill Bill",
+      "year": 2003,
+      "colorRating": "good"
+    },
+    {
+      "id": 8850,
+      "title": "Jackie Brown",
+      "year": 1997,
+      "colorRating": "good"
+    },
+    {
+      "id": 7743,
+      "title": "Čtyři pokoje",
+      "year": 1995,
+      "colorRating": "good"
+    },
+    {
+      "id": 8852,
+      "title": "Pulp Fiction: Historky z podsvětí",
+      "year": 1994,
+      "colorRating": "good"
+    }
+  ]
+}
+```
+</Accordion>
+
+<Note>
+The biography text may be truncated with an ellipsis (...) if it's too long. This is how ČSFD returns the data.
+</Note>
+
+<Tip>
+You can use the film IDs from the filmography to fetch detailed information about each movie using the `movie()` method.
+</Tip>

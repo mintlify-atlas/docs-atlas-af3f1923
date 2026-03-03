@@ -1,0 +1,538 @@
+---
+title: 'Movie Types'
+description: 'TypeScript types and interfaces for movie data in the ČSFD API'
+---
+
+## Overview
+
+The movie types module contains all TypeScript interfaces and types related to movie data, including detailed movie information, creators, VOD services, premieres, and series data.
+
+## CSFDMovie
+
+The main interface representing a complete movie or TV show with all its details.
+
+<ResponseField name="CSFDMovie" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD movie ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string" required>
+      Movie title
+    </ResponseField>
+    
+    <ResponseField name="year" type="number" required>
+      Release year
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Full ČSFD URL to the movie page
+    </ResponseField>
+    
+    <ResponseField name="type" type="CSFDFilmTypes" required>
+      Type of film (film, series, tv-show, etc.)
+    </ResponseField>
+    
+    <ResponseField name="colorRating" type="CSFDColorRating" required>
+      Overall aggregated rating color: 'bad' (0-29%), 'average' (30-69%), 'good' (70-100%), or 'unknown'
+    </ResponseField>
+    
+    <ResponseField name="rating" type="number | null" required>
+      Numeric rating percentage (0-100) or null if not rated
+    </ResponseField>
+    
+    <ResponseField name="poster" type="string" required>
+      URL to the movie poster image
+    </ResponseField>
+    
+    <ResponseField name="photo" type="string" required>
+      URL to the movie photo/still image
+    </ResponseField>
+    
+    <ResponseField name="ratingCount" type="number | null" required>
+      Number of user ratings, or null if none
+    </ResponseField>
+    
+    <ResponseField name="duration" type="number | string" required>
+      Movie duration in minutes (number) or formatted string
+    </ResponseField>
+    
+    <ResponseField name="titlesOther" type="CSFDTitlesOther[]" required>
+      Alternative titles in different countries
+    </ResponseField>
+    
+    <ResponseField name="origins" type="string[]" required>
+      Countries of origin
+    </ResponseField>
+    
+    <ResponseField name="descriptions" type="string[]" required>
+      Movie plot descriptions
+    </ResponseField>
+    
+    <ResponseField name="trivia" type="string[]" required>
+      Interesting facts and trivia about the movie
+    </ResponseField>
+    
+    <ResponseField name="genres" type="CSFDGenres[] | string[]" required>
+      Movie genres (typed or string array)
+    </ResponseField>
+    
+    <ResponseField name="creators" type="CSFDCreators" required>
+      All creators organized by role (directors, actors, etc.)
+    </ResponseField>
+    
+    <ResponseField name="vod" type="CSFDVod[]" required>
+      Available video-on-demand services
+    </ResponseField>
+    
+    <ResponseField name="tags" type="string[]" required>
+      User-generated tags
+    </ResponseField>
+    
+    <ResponseField name="premieres" type="CSFDPremiere[]" required>
+      Premiere dates by country and format
+    </ResponseField>
+    
+    <ResponseField name="related" type="CSFDMovieListItem[]" required>
+      Related movies
+    </ResponseField>
+    
+    <ResponseField name="similar" type="CSFDMovieListItem[]" required>
+      Similar movies
+    </ResponseField>
+    
+    <ResponseField name="seasons" type="CSFDSeriesChild[] | null" required>
+      List of seasons (for series) or null
+    </ResponseField>
+    
+    <ResponseField name="episodes" type="CSFDSeriesChild[] | null" required>
+      List of episodes (for seasons) or null
+    </ResponseField>
+    
+    <ResponseField name="parent" type="CSFDParent | null" required>
+      Parent series/season information or null
+    </ResponseField>
+    
+    <ResponseField name="episodeCode" type="string | null" required>
+      Episode code (e.g., "S01E05") or null
+    </ResponseField>
+    
+    <ResponseField name="seasonName" type="string | null" required>
+      Season name or null
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDCreators
+
+Organizes all movie creators by their role.
+
+<ResponseField name="CSFDCreators" type="object">
+  <Expandable title="properties">
+    <ResponseField name="directors" type="CSFDMovieCreator[]" required>
+      Directors
+    </ResponseField>
+    
+    <ResponseField name="writers" type="CSFDMovieCreator[]" required>
+      Screenwriters
+    </ResponseField>
+    
+    <ResponseField name="cinematography" type="CSFDMovieCreator[]" required>
+      Cinematographers
+    </ResponseField>
+    
+    <ResponseField name="music" type="CSFDMovieCreator[]" required>
+      Composers
+    </ResponseField>
+    
+    <ResponseField name="actors" type="CSFDMovieCreator[]" required>
+      Actors
+    </ResponseField>
+    
+    <ResponseField name="basedOn" type="CSFDMovieCreator[]" required>
+      Original work creators
+    </ResponseField>
+    
+    <ResponseField name="producers" type="CSFDMovieCreator[]" required>
+      Producers
+    </ResponseField>
+    
+    <ResponseField name="filmEditing" type="CSFDMovieCreator[]" required>
+      Film editors
+    </ResponseField>
+    
+    <ResponseField name="costumeDesign" type="CSFDMovieCreator[]" required>
+      Costume designers
+    </ResponseField>
+    
+    <ResponseField name="productionDesign" type="CSFDMovieCreator[]" required>
+      Production designers
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDMovieCreator
+
+Represents a person involved in movie creation.
+
+<ResponseField name="CSFDMovieCreator" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD person ID. You can assemble the URL: `https://www.csfd.cz/tvurce/${id}`
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      Creator's name
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Full URL to creator's ČSFD page
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDVod
+
+Video-on-demand service availability.
+
+<ResponseField name="CSFDVod" type="object">
+  <Expandable title="properties">
+    <ResponseField name="title" type="CSFDVodService" required>
+      Name of the VOD service
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Link to watch on the service
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDPremiere
+
+Premiere information for different countries and formats.
+
+<ResponseField name="CSFDPremiere" type="object">
+  <Expandable title="properties">
+    <ResponseField name="country" type="string" required>
+      Country of premiere
+    </ResponseField>
+    
+    <ResponseField name="format" type="string" required>
+      Format (cinema, TV, streaming, etc.)
+    </ResponseField>
+    
+    <ResponseField name="date" type="string" required>
+      Premiere date
+    </ResponseField>
+    
+    <ResponseField name="company" type="string" required>
+      Distribution company
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDTitlesOther
+
+Alternative movie titles in different countries.
+
+<ResponseField name="CSFDTitlesOther" type="object">
+  <Expandable title="properties">
+    <ResponseField name="country" type="string" required>
+      Country code or name
+    </ResponseField>
+    
+    <ResponseField name="title" type="string" required>
+      Localized title
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDMovieListItem
+
+Simplified movie reference for lists (related, similar movies).
+
+<ResponseField name="CSFDMovieListItem" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD movie ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string" required>
+      Movie title
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Full URL to movie page
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDParent
+
+Parent series/season information for episodes.
+
+<ResponseField name="CSFDParent" type="object">
+  <Expandable title="properties">
+    <ResponseField name="season" type="object | null" required>
+      Season information with id and title, or null
+    </ResponseField>
+    
+    <ResponseField name="series" type="object | null" required>
+      Series information with id and title, or null
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDSeriesChild
+
+Represents a season or episode in a series.
+
+<ResponseField name="CSFDSeriesChild" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string" required>
+      Season or episode title
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Full URL
+    </ResponseField>
+    
+    <ResponseField name="info" type="string | null" required>
+      Additional information or null
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Type Definitions
+
+### CSFDVodService
+
+All supported video-on-demand services:
+
+```typescript
+type CSFDVodService =
+  | 'Netflix'
+  | 'hbogo'
+  | 'Prime Video'
+  | 'Apple TV+'
+  | 'iTunes'
+  | 'KVIFF.TV'
+  | 'Edisonline'
+  | 'o2tv'
+  | 'SledovaniTV'
+  | 'Starmax'
+  | 'DAFilms'
+  | 'FILMY ČESKY A ZADARMO'
+  | 'Youtube Česká filmová klasika'
+  | 'VAPET'
+  | 'VOREL FILM'
+  | 'ivysilani'
+  | 'Google Play'
+  | 'Voyo'
+  | 'YouTube Movies'
+  | 'prima+'
+  | 'Lepší.TV'
+  | 'Blu-ray'
+  | 'DVD';
+```
+
+### CSFDGenres
+
+All ČSFD movie genres:
+
+```typescript
+type CSFDGenres =
+  | 'Akční'
+  | 'Animovaný'
+  | 'Dobrodružný'
+  | 'Dokumentární'
+  | 'Drama'
+  | 'Experimentální'
+  | 'Fantasy'
+  | 'Film-Noir'
+  | 'Historický'
+  | 'Horor'
+  | 'Hudební'
+  | 'IMAX'
+  | 'Katastrofický'
+  | 'Komedie'
+  | 'Krátkometrážní'
+  | 'Krimi'
+  | 'Loutkový'
+  | 'Muzikál'
+  | 'Mysteriózní'
+  | 'Naučný'
+  | 'Podobenství'
+  | 'Poetický'
+  | 'Pohádka'
+  | 'Povídkový'
+  | 'Psychologický'
+  | 'Publicistický'
+  | 'Reality-TV'
+  | 'Road movie'
+  | 'Rodinný'
+  | 'Romantický'
+  | 'Sci-Fi'
+  | 'Soutěžní'
+  | 'Sportovní'
+  | 'Stand-up'
+  | 'Talk-show'
+  | 'Taneční'
+  | 'Telenovela'
+  | 'Thriller'
+  | 'Válečný'
+  | 'Western'
+  | 'Zábavný'
+  | 'Životopisný';
+```
+
+### CSFDCreatorGroups
+
+Creator role labels in Czech:
+
+```typescript
+type CSFDCreatorGroups =
+  | 'Režie'
+  | 'Scénář'
+  | 'Kamera'
+  | 'Hudba'
+  | 'Hrají'
+  | 'Produkce'
+  | 'Casting'
+  | 'Střih'
+  | 'Zvuk'
+  | 'Masky'
+  | 'Předloha'
+  | 'Scénografie'
+  | 'Kostýmy';
+```
+
+### CSFDCreatorGroupsEnglish
+
+Creator role labels in English:
+
+```typescript
+type CSFDCreatorGroupsEnglish =
+  | 'Directed by'
+  | 'Screenplay'
+  | 'Cinematography'
+  | 'Composer'
+  | 'Cast'
+  | 'Produced by'
+  | 'Casting'
+  | 'Editing'
+  | 'Sound'
+  | 'Make-up'
+  | 'Production design'
+  | 'Based on'
+  | 'Costumes';
+```
+
+### CSFDCreatorGroupsSlovak
+
+Creator role labels in Slovak:
+
+```typescript
+type CSFDCreatorGroupsSlovak =
+  | 'Réžia'
+  | 'Scenár'
+  | 'Kamera'
+  | 'Hudba'
+  | 'Hrajú'
+  | 'Predloha'
+  | 'Produkcia'
+  | 'Strih'
+  | 'Kostýmy'
+  | 'Scénografia';
+```
+
+### CSFDBoxContent
+
+Types of related content boxes:
+
+```typescript
+type CSFDBoxContent = 'Související' | 'Podobné';
+```
+
+## Import Example
+
+```typescript
+import type {
+  CSFDMovie,
+  CSFDCreators,
+  CSFDMovieCreator,
+  CSFDVod,
+  CSFDVodService,
+  CSFDPremiere,
+  CSFDGenres,
+  CSFDTitlesOther,
+  CSFDMovieListItem,
+  CSFDParent,
+  CSFDSeriesChild,
+} from 'node-csfd-api';
+```
+
+## TypeScript Interface
+
+```typescript
+import { CSFDScreening } from './global';
+
+export interface CSFDMovie extends CSFDScreening {
+  rating: number | null;
+  poster: string;
+  photo: string;
+  ratingCount: number | null;
+  duration: number | string;
+  titlesOther: CSFDTitlesOther[];
+  origins: string[];
+  descriptions: string[];
+  trivia: string[];
+  genres: CSFDGenres[] | string[];
+  creators: CSFDCreators;
+  vod: CSFDVod[];
+  tags: string[];
+  premieres: CSFDPremiere[];
+  related: CSFDMovieListItem[];
+  similar: CSFDMovieListItem[];
+  seasons: CSFDSeriesChild[] | null;
+  episodes: CSFDSeriesChild[] | null;
+  parent: CSFDParent | null;
+  episodeCode: string | null;
+  seasonName: string | null;
+}
+
+export interface CSFDCreators {
+  directors: CSFDMovieCreator[];
+  writers: CSFDMovieCreator[];
+  cinematography: CSFDMovieCreator[];
+  music: CSFDMovieCreator[];
+  actors: CSFDMovieCreator[];
+  basedOn: CSFDMovieCreator[];
+  producers: CSFDMovieCreator[];
+  filmEditing: CSFDMovieCreator[];
+  costumeDesign: CSFDMovieCreator[];
+  productionDesign: CSFDMovieCreator[];
+}
+
+export interface CSFDMovieCreator {
+  id: number;
+  name: string;
+  url: string;
+}
+
+export interface CSFDVod {
+  title: CSFDVodService;
+  url: string;
+}
+
+export interface CSFDPremiere {
+  country: string;
+  format: string;
+  date: string;
+  company: string;
+}
+```

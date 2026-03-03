@@ -1,80 +1,385 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get from zero to working code in under 3 minutes with node-csfd-api
 ---
 
-## Get started in three steps
+# Quickstart
 
-Get your documentation site running locally and make your first customization.
+Get started with node-csfd-api in just a few minutes. This guide will walk you through making your first API calls.
 
-### Step 1: Set up your local environment
+## Your first API call
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+<Steps>
+  <Step title="Install the package">
+    First, install node-csfd-api in your project:
 
-### Step 2: Deploy your changes
+    <CodeGroup>
+      ```bash npm
+      npm install node-csfd-api
+      ```
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+      ```bash yarn
+      yarn add node-csfd-api
+      ```
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+      ```bash pnpm
+      pnpm add node-csfd-api
+      ```
+    </CodeGroup>
+  </Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Import the library">
+    Import the `csfd` instance in your code:
 
-### Step 3: Go live
+    <Tabs>
+      <Tab title="TypeScript">
+        ```typescript
+        import { csfd } from 'node-csfd-api';
+        ```
+      </Tab>
+      <Tab title="JavaScript (ESM)">
+        ```javascript
+        import { csfd } from 'node-csfd-api';
+        ```
+      </Tab>
+      <Tab title="JavaScript (CommonJS)">
+        ```javascript
+        const { csfd } = require('node-csfd-api');
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+  <Step title="Fetch a movie">
+    Make your first API call to fetch movie details:
+
+    <Tabs>
+      <Tab title="TypeScript">
+        ```typescript
+        import { csfd } from 'node-csfd-api';
+
+        // Fetch movie details by ČSFD ID
+        const movie = await csfd.movie(535121);
+
+        console.log(movie.title);      // "Na špatné straně"
+        console.log(movie.year);       // "2018"
+        console.log(movie.rating);     // 73
+        console.log(movie.genres);     // ["Krimi", "Drama", "Thriller"]
+        ```
+      </Tab>
+      <Tab title="JavaScript">
+        ```javascript
+        import { csfd } from 'node-csfd-api';
+
+        // Using async/await
+        const movie = await csfd.movie(535121);
+        console.log(movie.title);
+
+        // Or using promises
+        csfd.movie(535121).then((movie) => {
+          console.log(movie.title);
+        });
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="View the results">
+    Run your code and you'll see the movie data:
+
+    ```json
+    {
+      "id": 535121,
+      "title": "Na špatné straně",
+      "year": "2018",
+      "rating": 73,
+      "ratingCount": 6654,
+      "colorRating": "good",
+      "genres": ["Krimi", "Drama", "Thriller"],
+      "origins": ["USA", "Kanada"],
+      "type": "film",
+      "url": "https://www.csfd.cz/film/535121",
+      "poster": "https://image.pmgstatic.com/cache/resized/w1080/files/images/film/posters/163/579/163579352_bf8737.jpg"
+      // ... and much more
+    }
+    ```
+  </Step>
+</Steps>
+
+## Common operations
+
+Here are the most common operations you'll perform with the library:
+
+### Fetch movie details
+
+Get comprehensive information about a movie or TV series:
+
+<Tabs>
+  <Tab title="TypeScript">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const movie = await csfd.movie(621073);
+
+    console.log(movie.title);
+    console.log(movie.rating);
+    console.log(movie.creators.directors);
+    console.log(movie.creators.actors);
+    console.log(movie.vod); // VOD platforms where available
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    import { csfd } from 'node-csfd-api';
+
+    const movie = await csfd.movie(621073);
+
+    console.log(movie.title);
+    console.log(movie.rating);
+    console.log(movie.creators.directors);
+    console.log(movie.creators.actors);
+    console.log(movie.vod);
+    ```
+  </Tab>
+</Tabs>
+
+### Search for content
+
+Search across movies, TV series, and users:
+
+<Tabs>
+  <Tab title="TypeScript">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const results = await csfd.search('Tarantino');
+
+    // Access different result types
+    console.log(results.movies);   // Array of movies
+    console.log(results.tvSeries); // Array of TV series
+    console.log(results.users);    // Array of users
+
+    // Example: Get first movie result
+    if (results.movies.length > 0) {
+      const firstMovie = results.movies[0];
+      console.log(firstMovie.title);
+      console.log(firstMovie.year);
+      console.log(firstMovie.rating);
+    }
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    import { csfd } from 'node-csfd-api';
+
+    const results = await csfd.search('Tarantino');
+
+    console.log(results.movies);
+    console.log(results.tvSeries);
+    console.log(results.users);
+    ```
+  </Tab>
+</Tabs>
+
+### Get creator information
+
+Retrieve detailed information about directors, actors, and other creators:
+
+<Tabs>
+  <Tab title="TypeScript">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const creator = await csfd.creator(2120); // Quentin Tarantino
+
+    console.log(creator.name);      // "Quentin Tarantino"
+    console.log(creator.birthday);  // "27.03.1963"
+    console.log(creator.birthplace); // "Knoxville, Tennessee, USA"
+    console.log(creator.bio);       // Biography text
+    console.log(creator.films);     // Filmography array
+
+    // Loop through filmography
+    creator.films.forEach((film) => {
+      console.log(`${film.title} (${film.year})`);
+    });
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    import { csfd } from 'node-csfd-api';
+
+    const creator = await csfd.creator(2120);
+
+    console.log(creator.name);
+    console.log(creator.birthday);
+    console.log(creator.films);
+    ```
+  </Tab>
+</Tabs>
+
+### Get user ratings
+
+Access user ratings from ČSFD profiles:
+
+<Tabs>
+  <Tab title="TypeScript">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Get latest ratings (default: last page, ~50 items)
+    const ratings = await csfd.userRatings('912');
+
+    ratings.forEach((rating) => {
+      console.log(`${rating.title} (${rating.year}): ${rating.userRating}/5`);
+    });
+
+    // Get specific page
+    const page2 = await csfd.userRatings('912', { page: 2 });
+
+    // Filter by content type
+    const onlyMovies = await csfd.userRatings('912', {
+      includesOnly: ['film']
+    });
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    import { csfd } from 'node-csfd-api';
+
+    const ratings = await csfd.userRatings('912');
+
+    ratings.forEach((rating) => {
+      console.log(`${rating.title}: ${rating.userRating}/5`);
+    });
+    ```
+  </Tab>
+</Tabs>
+
+### Get user reviews
+
+Retrieve detailed user reviews with full text:
+
+<Tabs>
+  <Tab title="TypeScript">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Get latest reviews
+    const reviews = await csfd.userReviews('195357');
+
+    reviews.forEach((review) => {
+      console.log(`Review for: ${review.title}`);
+      console.log(`Rating: ${review.userRating}/5`);
+      console.log(`Review text: ${review.text}`);
+      console.log('---');
+    });
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    import { csfd } from 'node-csfd-api';
+
+    const reviews = await csfd.userReviews('195357');
+
+    reviews.forEach((review) => {
+      console.log(review.title);
+      console.log(review.text);
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Complete example
+
+Here's a complete example that demonstrates multiple API calls:
+
+<Tabs>
+  <Tab title="TypeScript">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    async function main() {
+      // Search for Tarantino
+      const searchResults = await csfd.search('Tarantino');
+      console.log(`Found ${searchResults.movies.length} movies`);
+
+      // Get Tarantino's creator info
+      const tarantino = await csfd.creator(2120);
+      console.log(`${tarantino.name} was born ${tarantino.birthday}`);
+      console.log(`Films directed: ${tarantino.films.length}`);
+
+      // Get details for his first film in the list
+      if (tarantino.films.length > 0) {
+        const firstFilm = tarantino.films[0];
+        const movieDetails = await csfd.movie(firstFilm.id);
+        console.log(`\nLatest film: ${movieDetails.title}`);
+        console.log(`Rating: ${movieDetails.rating}%`);
+        console.log(`Genres: ${movieDetails.genres.join(', ')}`);
+      }
+
+      // Get user ratings
+      const ratings = await csfd.userRatings('912');
+      console.log(`\nUser has rated ${ratings.length} items`);
+    }
+
+    main();
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    import { csfd } from 'node-csfd-api';
+
+    async function main() {
+      const searchResults = await csfd.search('Tarantino');
+      console.log(`Found ${searchResults.movies.length} movies`);
+
+      const tarantino = await csfd.creator(2120);
+      console.log(`${tarantino.name} was born ${tarantino.birthday}`);
+
+      const ratings = await csfd.userRatings('912');
+      console.log(`User has rated ${ratings.length} items`);
+    }
+
+    main();
+    ```
+  </Tab>
+</Tabs>
+
+## Important notes
+
+<Warning>
+This is a scraping library. Use it responsibly and respect ČSFD's terms of service:
+- Implement appropriate rate limiting in production
+- Consider caching responses to minimize server load
+- Be aware of CORS restrictions when using in browsers
+</Warning>
+
+<Info>
+When using `userRatings()` or `userReviews()` with the `allPages` option, always set an appropriate `allPagesDelay` to avoid detection:
+
+```typescript
+const allRatings = await csfd.userRatings('912', {
+  allPages: true,
+  allPagesDelay: 2000 // 2 second delay between requests
+});
+```
+</Info>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
+Now that you've made your first API calls, explore more advanced features:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="API Reference" icon="book" href="/api/csfd-class">
+    Explore all available methods, types, and options
+  </Card>
+  <Card title="Examples" icon="code" href="/examples/basic-usage">
+    See real-world examples and integration patterns
+  </Card>
+  <Card title="MCP Server" icon="robot" href="/cli/mcp-server">
+    Use ČSFD data with AI agents like Claude Desktop
+  </Card>
+  <Card title="Docker Support" icon="docker" href="/advanced/docker">
+    Run as a standalone REST API service
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

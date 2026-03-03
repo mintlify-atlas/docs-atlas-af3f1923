@@ -1,0 +1,133 @@
+---
+title: 'Creator Types'
+description: 'TypeScript types and interfaces for creator data in the ČSFD API'
+---
+
+## Overview
+
+The creator types module contains TypeScript interfaces for movie creators, including actors, directors, and other film industry professionals.
+
+## CSFDCreator
+
+The main interface representing a creator's complete profile.
+
+<ResponseField name="CSFDCreator" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD person ID. You can assemble the URL: `https://www.csfd.cz/tvurce/${id}`
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      Creator's name
+    </ResponseField>
+    
+    <ResponseField name="birthday" type="string | null" required>
+      Date of birth (formatted string) or null if unknown
+    </ResponseField>
+    
+    <ResponseField name="birthplace" type="string" required>
+      Place of birth
+    </ResponseField>
+    
+    <ResponseField name="photo" type="string" required>
+      URL to creator's photo
+    </ResponseField>
+    
+    <ResponseField name="age" type="number | string" required>
+      Current age (number) or formatted string (e.g., "deceased at 75")
+    </ResponseField>
+    
+    <ResponseField name="bio" type="string" required>
+      Biography text
+    </ResponseField>
+    
+    <ResponseField name="films" type="CSFDCreatorScreening[]" required>
+      Array of films the creator has worked on
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## CSFDCreatorScreening
+
+Represents a film in a creator's filmography.
+
+<ResponseField name="CSFDCreatorScreening" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD movie ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string" required>
+      Movie title
+    </ResponseField>
+    
+    <ResponseField name="year" type="number" required>
+      Release year
+    </ResponseField>
+    
+    <ResponseField name="colorRating" type="CSFDColorRating" required>
+      Overall aggregated rating color: 'bad', 'average', 'good', or 'unknown'
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+  `CSFDCreatorScreening` is a simplified version of `CSFDScreening` that omits the `url` and `type` properties. It extends `Omit<CSFDScreening, 'url' | 'type'>`.
+</Note>
+
+## Import Example
+
+```typescript
+import type {
+  CSFDCreator,
+  CSFDCreatorScreening,
+} from 'node-csfd-api';
+```
+
+## TypeScript Interface
+
+```typescript
+import { CSFDScreening } from './global';
+
+export interface CSFDCreator {
+  id: number;
+  name: string;
+  birthday: string | null;
+  birthplace: string;
+  photo: string;
+  age: number | string;
+  bio: string;
+  films: CSFDCreatorScreening[];
+}
+
+export type CSFDCreatorScreening = Omit<CSFDScreening, 'url' | 'type'>;
+```
+
+## Usage Example
+
+```typescript
+import { CSFD } from 'node-csfd-api';
+
+const csfd = new CSFD();
+
+// Get creator by ID
+const creator = await csfd.creator(2158); // Christopher Nolan
+
+console.log(`Name: ${creator.name}`);
+console.log(`Born: ${creator.birthday} in ${creator.birthplace}`);
+console.log(`Age: ${creator.age}`);
+console.log(`Bio: ${creator.bio}`);
+console.log(`Films: ${creator.films.length}`);
+
+// List filmography
+creator.films.forEach((film) => {
+  console.log(`${film.title} (${film.year}) - ${film.colorRating}`);
+});
+```
+
+## Related Types
+
+For creator references within movie data, see:
+- [CSFDMovieCreator](/api/types/movie-types#csfdmoviecreator) - Creator reference in movie credits
+- [CSFDSearchCreator](/api/types/search-types#csfdsearchcreator) - Creator in search results
+- [CSFDCreators](/api/types/movie-types#csfdcreators) - All creators organized by role

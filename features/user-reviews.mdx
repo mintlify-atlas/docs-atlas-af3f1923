@@ -1,0 +1,273 @@
+---
+title: User Reviews
+description: Retrieve detailed user reviews from ČSFD profiles with full text and metadata
+---
+
+The `userReviews()` method retrieves detailed reviews written by a user on their ČSFD profile. Unlike ratings, reviews include the full review text along with ratings and metadata.
+
+## Method Signature
+
+```typescript
+csfd.userReviews(
+  userId: string | number,
+  config?: UserReviewsOptions,
+  options?: CSFDOptions
+): Promise<CSFDUserReviews[]>
+```
+
+## Parameters
+
+<ParamField path="userId" type="string | number" required>
+  ČSFD user ID or username. Can be numeric (e.g., `195357`) or include username (e.g., `"195357-verbal"`)
+</ParamField>
+
+<ParamField path="config" type="UserReviewsOptions">
+  Configuration for filtering and pagination
+  
+  <Expandable title="properties">
+    <ParamField path="page" type="number">
+      Fetch specific page number (default: `1`)
+    </ParamField>
+    
+    <ParamField path="allPages" type="boolean">
+      Fetch all pages of reviews. Use with caution - can trigger rate limiting. Default: `false`
+    </ParamField>
+    
+    <ParamField path="allPagesDelay" type="number">
+      Delay between page requests in milliseconds when `allPages` is `true`. Recommended: `2000` or higher. Default: `0`
+    </ParamField>
+    
+    <ParamField path="includesOnly" type="CSFDFilmTypes[]">
+      Include only specific content types (e.g., `['film']`). Mutually exclusive with `exclude`.
+    </ParamField>
+    
+    <ParamField path="exclude" type="CSFDFilmTypes[]">
+      Exclude specific content types (e.g., `['episode']`). Mutually exclusive with `includesOnly`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="options" type="CSFDOptions">
+  Optional request configuration
+  
+  <Expandable title="properties">
+    <ParamField path="language" type="'cs' | 'en' | 'sk'">
+      Language variant. Defaults to `'cs'`
+    </ParamField>
+    
+    <ParamField path="request" type="object">
+      Custom request options
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return Type
+
+<ResponseField name="CSFDUserReviews[]" type="array">
+  Array of user review objects
+  
+  <Expandable title="item properties">
+    <ResponseField name="id" type="number">
+      Movie/show ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string">
+      Movie/show title
+    </ResponseField>
+    
+    <ResponseField name="year" type="number">
+      Release year
+    </ResponseField>
+    
+    <ResponseField name="type" type="CSFDFilmTypes">
+      Content type: `'film'`, `'series'`, `'episode'`, etc.
+    </ResponseField>
+    
+    <ResponseField name="url" type="string">
+      Full URL to the movie/show on ČSFD
+    </ResponseField>
+    
+    <ResponseField name="colorRating" type="'bad' | 'average' | 'good' | 'unknown'">
+      Overall ČSFD rating quality
+    </ResponseField>
+    
+    <ResponseField name="userDate" type="string | null">
+      Date when user wrote the review (format: "DD.MM.YYYY")
+    </ResponseField>
+    
+    <ResponseField name="userRating" type="0 | 1 | 2 | 3 | 4 | 5">
+      User's rating (0-5 stars)
+    </ResponseField>
+    
+    <ResponseField name="text" type="string">
+      Full review text written by the user
+    </ResponseField>
+    
+    <ResponseField name="poster" type="string">
+      URL to the movie/show poster image
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Usage Examples
+
+<Tabs>
+  <Tab title="Basic Usage">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Get latest reviews
+    const reviews = await csfd.userReviews(195357);
+    
+    reviews.forEach(review => {
+      console.log(`${review.title} (${review.year})`);
+      console.log(`Rating: ${review.userRating}/5`);
+      console.log(`Review: ${review.text}`);
+      console.log('---');
+    });
+    ```
+  </Tab>
+  
+  <Tab title="With Username">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Can use username format too
+    const reviews = await csfd.userReviews('195357-verbal');
+    
+    console.log(`Found ${reviews.length} reviews`);
+    ```
+  </Tab>
+  
+  <Tab title="Specific Page">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Get page 2 of reviews
+    const page2 = await csfd.userReviews(195357, { page: 2 });
+    
+    console.log(`Fetched ${page2.length} reviews from page 2`);
+    ```
+  </Tab>
+  
+  <Tab title="All Reviews (Rate Limited)">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Fetch ALL reviews with delay
+    const allReviews = await csfd.userReviews(195357, {
+      allPages: true,
+      allPagesDelay: 2000 // 2 second delay
+    });
+    
+    console.log(`Total reviews: ${allReviews.length}`);
+    
+    // Find longest review
+    const longest = allReviews.reduce((prev, current) => 
+      current.text.length > prev.text.length ? current : prev
+    );
+    
+    console.log(`Longest review: ${longest.title}`);
+    console.log(`Length: ${longest.text.length} characters`);
+    ```
+  </Tab>
+  
+  <Tab title="Filter by Type">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Get only film reviews (no episodes)
+    const filmReviews = await csfd.userReviews(195357, {
+      includesOnly: ['film']
+    });
+    
+    // Exclude TV episodes
+    const noEpisodes = await csfd.userReviews(195357, {
+      exclude: ['episode', 'season']
+    });
+    ```
+  </Tab>
+  
+  <Tab title="Search Reviews">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const reviews = await csfd.userReviews(195357);
+    
+    // Find reviews mentioning specific keywords
+    const keyword = 'Sparťan';
+    const matching = reviews.filter(review => 
+      review.text.includes(keyword)
+    );
+    
+    console.log(`Found ${matching.length} reviews mentioning "${keyword}"`);
+    ```
+  </Tab>
+</Tabs>
+
+<Accordion title="Example Response">
+```json
+[
+  {
+    "id": 1391448,
+    "title": "Co s Péťou?",
+    "year": 2025,
+    "type": "film",
+    "url": "https://www.csfd.cz/film/1391448-co-s-petou/prehled/",
+    "colorRating": "good",
+    "userDate": "27.11.2025",
+    "userRating": 4,
+    "text": "Co s Péťou? Inu, co by? Každý normální Sparťan by to okamžitě mrdnul z útesu...",
+    "poster": "https://image.pmgstatic.com/cache/resized/w240h339/files/images/film/posters/170/492/170492173_1l3djd.jpg"
+  },
+  {
+    "id": 1530416,
+    "title": "Kouzlo derby",
+    "year": 2025,
+    "type": "film",
+    "url": "https://www.csfd.cz/film/1530416-kouzlo-derby/prehled/",
+    "colorRating": "average",
+    "userDate": "26.11.2025",
+    "userRating": 1,
+    "text": "Typické kolečkoidní sebevykradačské pásmo klišovitých...",
+    "poster": "https://image.pmgstatic.com/cache/resized/w240h339/files/images/film/posters/170/230/170230377_cimu90.jpg"
+  }
+]
+```
+</Accordion>
+
+## Review Text Analysis
+
+Since reviews include full text, you can perform various analyses:
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+const reviews = await csfd.userReviews(195357);
+
+// Calculate average review length
+const avgLength = reviews.reduce(
+  (sum, r) => sum + r.text.length, 0
+) / reviews.length;
+
+console.log(`Average review length: ${avgLength.toFixed(0)} characters`);
+
+// Find reviews by rating
+const fiveStarReviews = reviews.filter(r => r.userRating === 5);
+const oneStarReviews = reviews.filter(r => r.userRating === 1);
+
+console.log(`5-star reviews: ${fiveStarReviews.length}`);
+console.log(`1-star reviews: ${oneStarReviews.length}`);
+```
+
+<Note>
+`includesOnly` and `exclude` are mutually exclusive. If both are provided, `includesOnly` takes precedence.
+</Note>
+
+<Warning>
+**Rate Limiting:** When using `allPages: true`, always use an appropriate `allPagesDelay` (2000ms or higher recommended) to avoid detection. ČSFD may block requests that appear automated.
+</Warning>
+
+<Tip>
+Reviews include poster images, making them ideal for building UI components that display user opinions with visual context.
+</Tip>

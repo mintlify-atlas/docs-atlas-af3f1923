@@ -1,0 +1,118 @@
+---
+title: Introduction
+description: Modern TypeScript library for scraping ČSFD.cz - the Czech-Slovak Film Database
+---
+
+# Introduction to ČSFD API
+
+A modern TypeScript NPM library for scraping **ČSFD.CZ**. Scraper, API REST Server, Exporter and MCP Server in one package.
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Get started by installing the library via npm, yarn, or pnpm
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Build your first integration in under 3 minutes
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/csfd-class">
+    Explore all available methods and types
+  </Card>
+  <Card title="Examples" icon="lightbulb" href="/examples/basic-usage">
+    Real-world usage examples and use cases
+  </Card>
+</CardGroup>
+
+## What is ČSFD?
+
+ČSFD.cz (Česko-Slovenská Filmová Databáze) is the Czech-Slovak Film Database - the most popular movie database and rating platform in the Czech Republic and Slovakia. Think of it as the local equivalent of IMDb, with a passionate community of film enthusiasts.
+
+This library provides programmatic access to ČSFD data through web scraping, enabling you to:
+
+- Fetch comprehensive movie and TV series information
+- Search across movies, series, and creators
+- Access user ratings and reviews
+- Get detailed creator filmographies and biographies
+- Integrate ČSFD data into your applications
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Type-safe" icon="shield-check">
+    Full TypeScript support with comprehensive type definitions for all API responses
+  </Card>
+  <Card title="Well-tested" icon="flask">
+    Approximately 100% code coverage with comprehensive test suite
+  </Card>
+  <Card title="Universal" icon="globe">
+    Works in Node.js, browsers, and serverless environments like AWS Lambda and CloudFlare Workers
+  </Card>
+  <Card title="Docker ready" icon="docker">
+    Pre-built Docker images available for easy deployment
+  </Card>
+  <Card title="Homebrew support" icon="beer-mug">
+    Easy globally installed CLI via Homebrew tap for macOS and Linux
+  </Card>
+  <Card title="MCP Server" icon="robot">
+    Use ČSFD data directly within LLMs like Claude Desktop via Model Context Protocol
+  </Card>
+  <Card title="Modern API" icon="bolt">
+    Promise-based with async/await support for clean, readable code
+  </Card>
+  <Card title="Few dependencies" icon="feather">
+    Lightweight and efficient with minimal external dependencies
+  </Card>
+</CardGroup>
+
+## Supported platforms
+
+The library is designed to work across a wide range of JavaScript environments:
+
+- **Node.js** - Both ESM and CommonJS module systems (Node 18+)
+- **Browsers** - Client-side usage (with CORS considerations)
+- **Docker** - Pre-built container images
+- **CLI** - macOS and Linux command-line tools via Homebrew
+- **MCP Server** - Integration with Claude Desktop and other AI tools
+- **Serverless** - Firebase Functions, AWS Lambda, CloudFlare Workers
+- **Browser Extensions** - Chrome, Firefox, Edge extensions
+- **React Native** - Mobile apps (including Expo)
+
+## Real-world usage
+
+This library powers several production applications:
+
+### Browser extensions
+
+- **[Netflix ČSFD Extension](https://chrome.google.com/webstore/detail/netflix-csfd/eomgekccbddnlpmehgdjmlphndjgnlni)** - Shows ČSFD ratings directly on Netflix
+- **[Dafilms Extension](https://chrome.google.com/webstore/detail/dafilms/hgcgneddmgflnbmhkjnefiobjgobbmdm)** - ČSFD integration for Dafilms streaming platform
+- **[Kviff.tv Extension](https://chrome.google.com/webstore/detail/kvifftv-%20-csfd/ihpngekoejodiligajlppbeedofhnmfm)** - ČSFD ratings for Kviff.tv festival streaming
+
+### Web applications
+
+- **bartweb.cz** - Personal website using Firebase Functions for "Last Seen" movie tracking
+
+### Mobile applications
+
+- **KinoKlub** - React Native app for AeroFilms cinema chain (available on Android & iOS)
+
+<Note>
+This is an unofficial library and is not affiliated with ČSFD.cz. Please use it responsibly and respect ČSFD's terms of service.
+</Note>
+
+## Privacy and security
+
+This library does not collect, store, or transmit any user data. All requests are made directly from your application to ČSFD.cz. No intermediary servers are involved, and no data is logged or stored by this library.
+
+<Info>
+The library has nowhere to store data - there are no backend servers or databases. Even if requested, there would be nothing to show.
+</Info>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Install the library" icon="download" href="/installation">
+    Get node-csfd-api installed in your project
+  </Card>
+  <Card title="Start building" icon="code" href="/quickstart">
+    Follow the quickstart guide to make your first API call
+  </Card>
+</CardGroup>

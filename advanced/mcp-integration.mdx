@@ -1,0 +1,381 @@
+---
+title: 'MCP Integration'
+description: 'Use ČSFD data directly within AI assistants using Model Context Protocol'
+icon: 'robot'
+---
+
+The ČSFD API includes a built-in [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server, allowing you to use ČSFD data directly within Large Language Models like **Claude Desktop**.
+
+## What is MCP?
+
+Model Context Protocol (MCP) is a standard protocol that allows AI assistants to access external data sources and tools. With MCP, Claude Desktop and other AI assistants can:
+
+- Search for movies and creators on ČSFD
+- Retrieve detailed information about films
+- Access user ratings and reviews
+- Get cinema screenings
+
+All in real-time, directly from natural language conversations.
+
+## Features
+
+The ČSFD MCP server provides the following capabilities:
+
+<CardGroup cols={2}>
+  <Card title="Search" icon="magnifying-glass">
+    Search for movies, TV series, creators, and users
+  </Card>
+  <Card title="Movie Details" icon="film">
+    Get comprehensive movie information including ratings, cast, and plot
+  </Card>
+  <Card title="Creator Info" icon="user">
+    Access biographies and filmographies
+  </Card>
+  <Card title="User Data" icon="star">
+    Retrieve user ratings and reviews
+  </Card>
+</CardGroup>
+
+## Quick Start with Claude Desktop
+
+The easiest way to use the MCP server is with Claude Desktop.
+
+<Steps>
+  <Step title="Locate your Claude Desktop config">
+    Find the configuration file:
+
+    <Tabs>
+      <Tab title="macOS">
+        ```
+        ~/Library/Application Support/Claude/claude_desktop_config.json
+        ```
+      </Tab>
+      <Tab title="Windows">
+        ```
+        %APPDATA%\Claude\claude_desktop_config.json
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Add ČSFD MCP server configuration">
+    Add the following to your `claude_desktop_config.json`:
+
+    ```json
+    {
+      "mcpServers": {
+        "csfd": {
+          "command": "npx",
+          "args": ["-y", "node-csfd-api", "mcp"]
+        }
+      }
+    }
+    ```
+
+    <Info>
+      If you already have other MCP servers configured, just add the `csfd` entry to your existing `mcpServers` object.
+    </Info>
+  </Step>
+
+  <Step title="Restart Claude Desktop">
+    Close and reopen Claude Desktop for the changes to take effect.
+  </Step>
+
+  <Step title="Test it out">
+    Try asking Claude:
+    - "Search for Inception on ČSFD"
+    - "Get details about Quentin Tarantino"
+    - "What are the top rated movies by Christopher Nolan?"
+  </Step>
+</Steps>
+
+## Available MCP Tools
+
+The ČSFD MCP server exposes 6 tools that AI assistants can use:
+
+### 1. Search
+
+**Description:** Search for movies, TV series, or people on ČSFD.cz
+
+**Input:**
+- `query` (string): Search query (movie title, actor name, etc.)
+
+**Returns:** Lists of matching movies, TV series, creators, and users with their IDs
+
+<Tip>
+  This is usually the **first tool** to use - it returns IDs that other tools need.
+</Tip>
+
+### 2. Get Movie
+
+**Description:** Retrieve detailed information about a specific movie or series
+
+**Input:**
+- `id` (number): ČSFD movie ID (obtained from search)
+
+**Returns:** Comprehensive movie data including:
+- Title, year, rating, and poster
+- Plot descriptions and trivia
+- Genres and origins
+- Cast and crew
+- VOD platforms
+- Premieres and related movies
+
+### 3. Get Creator
+
+**Description:** Get information about a creator (actor, director, etc.)
+
+**Input:**
+- `id` (number): ČSFD creator ID
+
+**Returns:**
+- Name and biography
+- Birthday and birthplace
+- Photo
+- Complete filmography
+
+### 4. Get User Ratings
+
+**Description:** Retrieve movie ratings from a ČSFD user profile
+
+**Input:**
+- `user` (string | number): User ID or username
+- `page` (number, optional): Page number
+- `allPages` (boolean, optional): Fetch all pages
+- `allPagesDelay` (number, optional): Delay between requests (ms)
+- `excludes` (array, optional): Film types to exclude
+- `includesOnly` (array, optional): Film types to include
+
+**Returns:** Array of rated movies with user ratings (0-5 stars)
+
+### 5. Get User Reviews
+
+**Description:** Retrieve detailed reviews written by a ČSFD user
+
+**Input:** Same as Get User Ratings
+
+**Returns:** Array of reviews with full text and ratings
+
+### 6. Get Cinemas
+
+**Description:** Get cinema screenings for a specific district
+
+**Input:**
+- `district` (string | number): District ID or name
+- `period` (enum): Time period (`today`, `tomorrow`, `weekend`, `week`, `month`)
+
+**Returns:** List of cinemas with their screenings and showtimes
+
+## Usage Examples
+
+Here are some example prompts you can use with Claude Desktop:
+
+<Tabs>
+  <Tab title="Movie Search">
+    **Prompt:**
+    > "Find the movie 'Interstellar' on ČSFD and tell me its rating"
+
+    Claude will:
+    1. Use the `search` tool to find Interstellar
+    2. Use the `get_movie` tool with the ID
+    3. Return the rating and other details
+  </Tab>
+
+  <Tab title="Actor Filmography">
+    **Prompt:**
+    > "What are the best movies by Mads Mikkelsen according to ČSFD?"
+
+    Claude will:
+    1. Search for Mads Mikkelsen
+    2. Get his creator profile
+    3. Analyze his filmography
+    4. Return the highest-rated films
+  </Tab>
+
+  <Tab title="User Analysis">
+    **Prompt:**
+    > "What movies has user 912 rated 5 stars recently?"
+
+    Claude will:
+    1. Fetch user ratings for user 912
+    2. Filter for 5-star ratings
+    3. Return the results
+  </Tab>
+
+  <Tab title="Cinema Showtimes">
+    **Prompt:**
+    > "What's playing in Prague cinemas this weekend?"
+
+    Claude will:
+    1. Use the `get_cinemas` tool for Prague district
+    2. Filter for weekend period
+    3. Return cinema listings with showtimes
+  </Tab>
+</Tabs>
+
+## Built-in Prompts
+
+The MCP server includes pre-built prompts for common tasks:
+
+### Actor Top Rated
+
+**Description:** Finds and ranks the best movies of a specific actor or creator
+
+**Usage:**
+```
+Find top rated movies by Mads Mikkelsen
+```
+
+This prompt automatically:
+1. Searches for the person
+2. Retrieves their profile
+3. Identifies top 5 highest-rated movies
+4. Returns a formatted list
+
+## Running the MCP Server Manually
+
+You can also run the MCP server directly from the command line:
+
+<Tabs>
+  <Tab title="NPX">
+    ```bash
+    npx node-csfd-api mcp
+    ```
+  </Tab>
+
+  <Tab title="Global Install">
+    ```bash
+    # Install globally first
+    npm install -g node-csfd-api
+
+    # Run the server
+    csfd mcp
+    ```
+  </Tab>
+
+  <Tab title="Local Development">
+    ```bash
+    # Clone the repo
+    git clone https://github.com/bartholomej/node-csfd-api.git
+    cd node-csfd-api
+
+    # Install dependencies
+    yarn install
+
+    # Build
+    yarn build
+
+    # Run MCP server
+    yarn mcp
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration for Other AI Assistants
+
+While Claude Desktop is the primary target, the MCP server can work with any MCP-compatible AI assistant.
+
+### Generic MCP Client Configuration
+
+```json
+{
+  "name": "csfd",
+  "command": "npx",
+  "args": ["-y", "node-csfd-api", "mcp"],
+  "transport": "stdio"
+}
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Claude doesn't recognize ČSFD tools">
+    **Solution:**
+    1. Verify your `claude_desktop_config.json` is correctly formatted
+    2. Make sure you restarted Claude Desktop after making changes
+    3. Check that `npx` is available in your PATH:
+       ```bash
+       npx --version
+       ```
+  </Accordion>
+
+  <Accordion title="Tools return errors">
+    **Solution:**
+    1. Check your internet connection
+    2. Verify the ČSFD website is accessible
+    3. Try running the MCP server manually to see error messages:
+       ```bash
+       npx node-csfd-api mcp
+       ```
+  </Accordion>
+
+  <Accordion title="Slow responses">
+    **Solution:**
+    - The MCP server scrapes data from ČSFD.cz in real-time, so some delay is normal
+    - For faster responses, consider running your own REST API server with caching
+  </Accordion>
+
+  <Accordion title="Rate limiting issues">
+    **Solution:**
+    - When fetching all pages of user ratings/reviews, use the `allPagesDelay` parameter
+    - Avoid making too many requests in a short time
+    - Consider implementing your own caching layer
+  </Accordion>
+</AccordionGroup>
+
+## Advanced Configuration
+
+### Using a Local Build
+
+For development or if you want to modify the MCP server:
+
+```json claude_desktop_config.json
+{
+  "mcpServers": {
+    "csfd-local": {
+      "command": "node",
+      "args": ["/path/to/node-csfd-api/dist/bin/mcp-server.mjs"]
+    }
+  }
+}
+```
+
+### Environment Variables
+
+You can pass environment variables to the MCP server:
+
+```json
+{
+  "mcpServers": {
+    "csfd": {
+      "command": "npx",
+      "args": ["-y", "node-csfd-api", "mcp"],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
+```
+
+## Privacy & Security
+
+<Note>
+  The MCP server does **not** collect, store, or transmit any user data. All requests go directly from your machine to ČSFD.cz.
+</Note>
+
+- No data is logged or stored
+- No intermediary servers are involved
+- All scraping happens in real-time from your local machine
+- Respects ČSFD's terms of service
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="TypeScript Types" icon="code" href="/advanced/typescript-types">
+    Explore the type definitions for MCP responses
+  </Card>
+  <Card title="REST API" icon="server" href="/advanced/docker">
+    Run your own ČSFD API server
+  </Card>
+</CardGroup>

@@ -1,122 +1,119 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "ČSFD API",
+  "theme": "sequoia",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#D32F2F",
+    "light": "#FF5252",
+    "dark": "#B71C1C"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/bartholomej/node-csfd-api"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/bartholomej/node-csfd-api"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "installation",
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Features",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "features/movies",
+              "features/search",
+              "features/creators",
+              "features/user-ratings",
+              "features/user-reviews",
+              "features/cinema"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "CLI Tools",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "cli/overview",
+              "cli/export-ratings",
+              "cli/rest-server",
+              "cli/mcp-server"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Advanced",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "advanced/docker",
+              "advanced/mcp-integration",
+              "advanced/typescript-types",
+              "advanced/configuration"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/basic-usage",
+              "examples/filtering-ratings",
+              "examples/letterboxd-export",
+              "examples/browser-extensions"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Core API",
             "pages": [
-              "api-reference/introduction"
+              "api/csfd-class",
+              "api/movie",
+              "api/search",
+              "api/creator",
+              "api/user-ratings",
+              "api/user-reviews",
+              "api/cinema"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "TypeScript Types",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/types/movie-types",
+              "api/types/search-types",
+              "api/types/creator-types",
+              "api/types/user-types",
+              "api/types/common-types"
+            ]
+          },
+          {
+            "group": "REST API",
+            "pages": [
+              "api/rest/endpoints",
+              "api/rest/authentication",
+              "api/rest/rate-limiting"
+            ]
+          },
+          {
+            "group": "MCP Server",
+            "pages": [
+              "api/mcp/tools",
+              "api/mcp/setup",
+              "api/mcp/claude-desktop"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

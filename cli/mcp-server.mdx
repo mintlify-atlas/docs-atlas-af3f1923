@@ -1,0 +1,425 @@
+---
+title: MCP Server
+description: Model Context Protocol server for AI integrations
+---
+
+The MCP (Model Context Protocol) server allows AI tools like Claude Desktop to query ČSFD data directly using natural language.
+
+## What is MCP?
+
+Model Context Protocol (MCP) is an open standard that enables AI assistants to securely access external data sources and tools. Think of it as a way for AI models to "know" about ČSFD movies without you having to copy-paste data.
+
+<Note>
+Learn more about MCP at [modelcontextprotocol.io](https://modelcontextprotocol.io/)
+</Note>
+
+## Quick Start
+
+### Running the Server
+
+```bash
+npx node-csfd-api mcp
+```
+
+You should see:
+
+```bash
+--- CSFD MCP Server (v5.1.0) ---
+Status: Running via Stdio
+
+To use this server in Claude Desktop, add this to your config:
+{
+  "node-csfd-api": {
+    "command": "npx",
+    "args": ["-y", "node-csfd-api", "mcp"]
+  }
+}
+```
+
+<Warning>
+The MCP server communicates via **stdio** (standard input/output). Don't run it directly in your terminal - it's meant to be launched by AI tools like Claude Desktop.
+</Warning>
+
+## Integration with Claude Desktop
+
+<Steps>
+  <Step title="Locate Claude Config File">
+    The configuration file location depends on your OS:
+    
+    <CodeGroup>
+    ```bash macOS
+    ~/Library/Application Support/Claude/claude_desktop_config.json
+    ```
+    
+    ```bash Windows
+    %APPDATA%\Claude\claude_desktop_config.json
+    ```
+    
+    ```bash Linux
+    ~/.config/Claude/claude_desktop_config.json
+    ```
+    </CodeGroup>
+  </Step>
+  
+  <Step title="Edit the Config File">
+    Add the ČSFD MCP server to the `mcpServers` section:
+    
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "csfd": {
+          "command": "npx",
+          "args": ["-y", "node-csfd-api", "mcp"]
+        }
+      }
+    }
+    ```
+    
+    <Note>
+    If you installed via Homebrew, you can use:
+    ```json
+    {
+      "mcpServers": {
+        "csfd": {
+          "command": "csfd",
+          "args": ["mcp"]
+        }
+      }
+    }
+    ```
+    </Note>
+  </Step>
+  
+  <Step title="Restart Claude Desktop">
+    Close and reopen Claude Desktop completely for the changes to take effect.
+  </Step>
+  
+  <Step title="Verify Integration">
+    In Claude Desktop, you should see a small tool icon indicating available MCP servers. Try asking:
+    
+    > "Search for Quentin Tarantino movies on ČSFD"
+  </Step>
+</Steps>
+
+## Available MCP Tools
+
+The MCP server exposes 6 tools that Claude can use:
+
+### 1. Search
+
+Search for movies, TV series, or people on ČSFD.
+
+**Tool name:** `search`
+
+**Input:**
+- `query` (string) - Search query (movie title, actor name, etc.)
+
+**Example Claude prompt:**
+> "Search ČSFD for movies with Tom Hanks"
+
+### 2. Get Movie
+
+Retrieve detailed information about a specific movie or series.
+
+**Tool name:** `get_movie`
+
+**Input:**
+- `id` (number) - ČSFD movie ID
+
+**What it returns:**
+- Title, year, rating, genres
+- Plot descriptions
+- Cast and crew
+- VOD availability
+- Premiere dates
+- Trivia
+
+**Example Claude prompt:**
+> "Get details about ČSFD movie ID 535121"
+
+### 3. Get Creator
+
+Retrieve information about actors, directors, and other creators.
+
+**Tool name:** `get_creator`
+
+**Input:**
+- `id` (number) - ČSFD creator ID
+
+**What it returns:**
+- Name, biography
+- Birthday, birthplace
+- Age, photo
+- Complete filmography
+
+**Example Claude prompt:**
+> "Show me Quentin Tarantino's filmography from ČSFD"
+
+### 4. Get User Ratings
+
+Retrieve movie ratings from a specific ČSFD user.
+
+**Tool name:** `get_user_ratings`
+
+**Input:**
+- `user` (string | number) - User ID or username
+- `page` (number, optional) - Page number
+- `allPages` (boolean, optional) - Fetch all pages
+- `allPagesDelay` (number, optional) - Delay between requests in ms
+- `excludes` (array, optional) - Content types to exclude
+- `includesOnly` (array, optional) - Content types to include
+
+**Example Claude prompts:**
+> "What movies has ČSFD user 912 rated recently?"
+>
+> "Get all film ratings from user 912-bart, excluding TV series"
+
+### 5. Get User Reviews
+
+Retrieve detailed reviews written by a ČSFD user.
+
+**Tool name:** `get_user_reviews`
+
+**Input:**
+- Same parameters as `get_user_ratings`
+
+**What it returns:**
+- Review text
+- User rating (0-5 stars)
+- Review date
+- Movie details
+
+**Example Claude prompt:**
+> "Show me the latest reviews from ČSFD user 195357"
+
+### 6. Get Cinemas
+
+Retrieve cinema screenings for a given district.
+
+**Tool name:** `get_cinemas`
+
+**Input:**
+- `district` (number | string) - District ID or name
+- `period` (enum) - Time period: `today`, `tomorrow`, `weekend`, `week`, `month`
+
+**Example Claude prompt:**
+> "What's showing in Prague cinemas this weekend?"
+
+## Available MCP Prompts
+
+The server includes pre-built prompt templates:
+
+### Actor Top Rated
+
+Finds and ranks the best movies of a specific actor or creator.
+
+**Prompt name:** `actor-top-rated`
+
+**Input:**
+- `actorName` (string) - Name of the actor or director
+
+**What it does:**
+1. Searches for the person
+2. Retrieves their full profile
+3. Analyzes their filmography
+4. Returns top 5 highest-rated movies
+
+**Example Claude prompt:**
+> "Use the actor-top-rated prompt for Mads Mikkelsen"
+
+## Real-World Usage Examples
+
+### Finding Movie Information
+
+<CodeGroup>
+```text User
+What's the ČSFD rating for the movie "Dragged Across Concrete"?
+```
+
+```text Claude (Internal)
+1. Uses `search` tool with query "Dragged Across Concrete"
+2. Gets movie ID from results (535121)
+3. Uses `get_movie` tool with ID 535121
+4. Returns rating (73%) and other details
+```
+
+```text Claude Response
+The movie "Dragged Across Concrete" (Czech title: "Na špatné straně") has a ČSFD rating of 73% based on 6,654 votes. It's rated as "good" on the platform.
+```
+</CodeGroup>
+
+### Analyzing User Preferences
+
+<CodeGroup>
+```text User
+Analyze user 912's ratings and tell me their favorite genres
+```
+
+```text Claude (Internal)
+1. Uses `get_user_ratings` with user=912, allPages=true
+2. Uses `get_movie` for top-rated films to get genre info
+3. Analyzes genre distribution
+```
+
+```text Claude Response
+Based on 1,247 ratings from user 912, their favorite genres are:
+1. Drama (42% of highly-rated films)
+2. Thriller (28%)
+3. Documentary (18%)
+
+They tend to rate documentaries highest, with an average of 4.2/5 stars.
+```
+</CodeGroup>
+
+### Creator Filmography
+
+<CodeGroup>
+```text User
+Show me S. Craig Zahler's highest-rated films on ČSFD
+```
+
+```text Claude (Internal)
+1. Uses `search` with query "S. Craig Zahler"
+2. Gets creator ID (87470)
+3. Uses `get_creator` with ID 87470
+4. Sorts filmography by rating
+```
+
+```text Claude Response
+S. Craig Zahler's top-rated films on ČSFD:
+
+1. Brawl in Cell Block 99 (2017) - Rating: 75%
+2. Bone Tomahawk (2015) - Rating: 74%  
+3. Dragged Across Concrete (2018) - Rating: 73%
+
+All three are rated as "good" on the platform.
+```
+</CodeGroup>
+
+## Advanced Configuration
+
+### Using Local Build (Development)
+
+If you're developing or testing local changes:
+
+<Steps>
+  <Step title="Build the Project">
+    ```bash
+    git clone https://github.com/bartholomej/node-csfd-api.git
+    cd node-csfd-api
+    yarn install
+    yarn build
+    ```
+  </Step>
+  
+  <Step title="Update Claude Config">
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "csfd-local": {
+          "command": "node",
+          "args": ["/path/to/node-csfd-api/dist/cli.mjs", "mcp"]
+        }
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+### Debugging
+
+Enable debug logging by checking Claude Desktop's log files:
+
+<CodeGroup>
+```bash macOS
+tail -f ~/Library/Logs/Claude/mcp*.log
+```
+
+```bash Windows
+type %APPDATA%\Claude\logs\mcp*.log
+```
+</CodeGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Claude doesn't see the MCP server">
+    1. Check that `claude_desktop_config.json` is valid JSON (use a validator)
+    2. Ensure you fully restarted Claude Desktop (quit completely, not just close window)
+    3. Check Claude's logs for error messages
+    4. Verify `npx node-csfd-api mcp` runs successfully in terminal
+  </Accordion>
+  
+  <Accordion title="'command not found' error">
+    If using `npx`:
+    ```json
+    {
+      "command": "npx",
+      "args": ["-y", "node-csfd-api", "mcp"]
+    }
+    ```
+    
+    The `-y` flag ensures `npx` doesn't prompt for confirmation.
+    
+    If using Homebrew `csfd` command:
+    ```json
+    {
+      "command": "csfd",
+      "args": ["mcp"]
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Slow responses from Claude">
+    MCP tools make real-time requests to ČSFD:
+    - `search` is fast (~1s)
+    - `get_movie` is fast (~1s)  
+    - `get_user_ratings` with `allPages=true` can take minutes for large collections
+    
+    **Tip:** For user ratings, start with `page=1` to get quick results, then use `allPages` only when needed.
+  </Accordion>
+  
+  <Accordion title="Server version mismatch">
+    If Claude reports an unexpected MCP server version:
+    
+    ```bash
+    # Clear npx cache
+    npx clear-npx-cache
+    
+    # Or force reinstall
+    npx -y node-csfd-api@latest mcp
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Security Considerations
+
+<Warning>
+The MCP server runs **locally on your machine** and makes direct requests to ČSFD.cz. Consider:
+
+- No API key required (it's your local machine)
+- All requests come from your IP address
+- ČSFD may rate-limit excessive requests
+- User data is fetched in real-time (not cached)
+</Warning>
+
+**Best practices:**
+- Use `allPagesDelay` when fetching large datasets
+- Don't share your `claude_desktop_config.json` (may contain other sensitive servers)
+- Be mindful of ČSFD's terms of service
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card title="MCP Documentation" icon="book" href="https://modelcontextprotocol.io">
+    Learn more about the Model Context Protocol
+  </Card>
+  
+  <Card title="CLI Overview" icon="terminal" href="/cli/overview">
+    Explore other CLI tools
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api/csfd-class">
+    See the underlying API methods
+  </Card>
+</CardGroup>

@@ -1,0 +1,234 @@
+---
+title: 'search()'
+description: 'Search for movies, TV series, creators, and users across ČSFD'
+---
+
+The `search()` method performs a comprehensive search across ČSFD's database, returning matching movies, TV series, creators, and users.
+
+## Signature
+
+```typescript
+csfd.search(text: string, options?: CSFDOptions): Promise<CSFDSearch>
+```
+
+## Parameters
+
+<ParamField path="text" type="string" required>
+  Search query text. Can be movie titles, creator names, or usernames.
+</ParamField>
+
+<ParamField path="options" type="CSFDOptions" optional>
+  Override default options for this request
+  
+  <Expandable title="properties">
+    <ParamField path="language" type="'cs' | 'en' | 'sk'" optional>
+      Preferred language for content (default: 'cs')
+    </ParamField>
+    
+    <ParamField path="request" type="RequestInit" optional>
+      Custom fetch request options (headers, timeout, etc.)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+<ResponseField name="CSFDSearch" type="object">
+  Search results organized by content type
+  
+  <Expandable title="properties">
+    <ResponseField name="movies" type="CSFDSearchMovie[]">
+      Array of matching movies
+      
+      <Expandable title="movie properties">
+        <ResponseField name="id" type="number">
+          ČSFD movie ID
+        </ResponseField>
+        <ResponseField name="title" type="string">
+          Movie title
+        </ResponseField>
+        <ResponseField name="year" type="number">
+          Release year
+        </ResponseField>
+        <ResponseField name="url" type="string">
+          Full URL to the movie page
+        </ResponseField>
+        <ResponseField name="type" type="CSFDFilmTypes">
+          Content type (e.g., 'film', 'tv-film')
+        </ResponseField>
+        <ResponseField name="colorRating" type="'bad' | 'average' | 'good' | 'unknown'">
+          Overall rating indicator
+        </ResponseField>
+        <ResponseField name="poster" type="string">
+          URL to the movie poster
+        </ResponseField>
+        <ResponseField name="origins" type="string[]">
+          Countries of origin
+        </ResponseField>
+        <ResponseField name="creators" type="object">
+          Basic creator information
+          
+          <Expandable title="properties">
+            <ResponseField name="directors" type="CSFDMovieCreator[]">
+              Array of directors
+            </ResponseField>
+            <ResponseField name="actors" type="CSFDMovieCreator[]">
+              Array of main actors
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="tvSeries" type="CSFDSearchMovie[]">
+      Array of matching TV series (same structure as movies)
+    </ResponseField>
+    
+    <ResponseField name="creators" type="CSFDSearchCreator[]">
+      Array of matching creators
+      
+      <Expandable title="creator properties">
+        <ResponseField name="id" type="number">
+          ČSFD creator ID
+        </ResponseField>
+        <ResponseField name="name" type="string">
+          Creator's name
+        </ResponseField>
+        <ResponseField name="url" type="string">
+          Full URL to the creator page
+        </ResponseField>
+        <ResponseField name="image" type="string">
+          URL to creator's photo
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="users" type="CSFDSearchUser[]">
+      Array of matching users
+      
+      <Expandable title="user properties">
+        <ResponseField name="id" type="number">
+          User ID
+        </ResponseField>
+        <ResponseField name="user" type="string">
+          Username
+        </ResponseField>
+        <ResponseField name="userRealName" type="string">
+          User's real name
+        </ResponseField>
+        <ResponseField name="avatar" type="string">
+          URL to user's avatar image
+        </ResponseField>
+        <ResponseField name="url" type="string">
+          Full URL to the user profile
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+### Basic Search
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+const results = await csfd.search('Tarantino');
+
+console.log(results.movies); // Movies related to "Tarantino"
+console.log(results.tvSeries); // TV series
+console.log(results.creators); // Creators (Quentin Tarantino, etc.)
+console.log(results.users); // Users with "Tarantino" in name
+```
+
+### Search for Movies Only
+
+```typescript
+const results = await csfd.search('Pulp Fiction');
+
+// Display movie results
+results.movies.forEach(movie => {
+  console.log(`${movie.title} (${movie.year})`);
+  console.log(`Rating: ${movie.colorRating}`);
+  console.log(`URL: ${movie.url}`);
+});
+```
+
+### Search for Creators
+
+```typescript
+const results = await csfd.search('Christopher Nolan');
+
+if (results.creators.length > 0) {
+  const creator = results.creators[0];
+  console.log(creator.name); // "Christopher Nolan"
+  console.log(creator.id); // Creator ID for use with creator() method
+  
+  // Get full creator details
+  const details = await csfd.creator(creator.id);
+}
+```
+
+### Search with Language Option
+
+```typescript
+const results = await csfd.search('bart', {
+  language: 'en'
+});
+
+// Results may include English-language content when available
+```
+
+### Complete Search Flow
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+async function searchAndDisplayResults(query: string) {
+  const results = await csfd.search(query);
+  
+  console.log(`\nSearch results for "${query}":\n`);
+  
+  // Movies
+  if (results.movies.length > 0) {
+    console.log('Movies:');
+    results.movies.forEach(movie => {
+      console.log(`  - ${movie.title} (${movie.year}) [${movie.colorRating}]`);
+    });
+  }
+  
+  // TV Series
+  if (results.tvSeries.length > 0) {
+    console.log('\nTV Series:');
+    results.tvSeries.forEach(series => {
+      console.log(`  - ${series.title} (${series.year})`);
+    });
+  }
+  
+  // Creators
+  if (results.creators.length > 0) {
+    console.log('\nCreators:');
+    results.creators.forEach(creator => {
+      console.log(`  - ${creator.name}`);
+    });
+  }
+  
+  // Users
+  if (results.users.length > 0) {
+    console.log('\nUsers:');
+    results.users.forEach(user => {
+      console.log(`  - ${user.user} (${user.userRealName})`);
+    });
+  }
+}
+
+await searchAndDisplayResults('Tarantino');
+```
+
+## Related
+
+- [CSFDSearch Type](/api/types/search-types)
+- [CSFDOptions Type](/api/types/common-types)
+- [movie()](/api/movie) - Get movie details
+- [creator()](/api/creator) - Get creator details

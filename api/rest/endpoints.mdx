@@ -1,0 +1,577 @@
+---
+title: REST API Endpoints
+description: Complete reference for all CSFD REST API endpoints
+icon: "globe"
+---
+
+## Available Endpoints
+
+The CSFD REST API exposes the following endpoints:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | API information and available endpoints |
+| `GET` | `/movie/:id` | Get detailed movie information |
+| `GET` | `/search/:query` | Search for movies, TV series, and users |
+| `GET` | `/creator/:id` | Get creator details and filmography |
+| `GET` | `/user-ratings/:id` | Get user ratings with pagination |
+| `GET` | `/user-reviews/:id` | Get user reviews with pagination |
+| `GET` | `/cinemas` | Get cinema listings for today |
+
+---
+
+## Root Endpoint
+
+<ParamField path="/" type="GET">
+  Returns basic API information and available endpoints.
+</ParamField>
+
+### Response
+
+<ResponseField name="name" type="string">
+  Package name: `node-csfd-api`
+</ResponseField>
+
+<ResponseField name="version" type="string">
+  Current API version
+</ResponseField>
+
+<ResponseField name="docs" type="string">
+  Documentation URL
+</ResponseField>
+
+<ResponseField name="links" type="string[]">
+  Array of available endpoint paths
+</ResponseField>
+
+### Example
+
+```bash
+curl http://localhost:3000/
+```
+
+```json
+{
+  "name": "node-csfd-api",
+  "version": "1.0.0",
+  "docs": "https://github.com/bartholomej/node-csfd-api",
+  "links": [
+    "/movie/:id",
+    "/creator/:id",
+    "/search/:query",
+    "/user-ratings/:id",
+    "/user-reviews/:id",
+    "/cinemas"
+  ]
+}
+```
+
+---
+
+## Get Movie Details
+
+<ParamField path="/movie/:id" type="GET">
+  Retrieve comprehensive information about a movie or TV series.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="number" required>
+  The CSFD movie ID (e.g., `535121`)
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="language" type="string">
+  Language code for content. Supported values: `cs`, `en`, `sk`
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="number">
+  CSFD movie ID
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Movie title
+</ResponseField>
+
+<ResponseField name="year" type="string">
+  Release year
+</ResponseField>
+
+<ResponseField name="rating" type="number">
+  CSFD rating percentage (0-100)
+</ResponseField>
+
+<ResponseField name="ratingCount" type="number">
+  Number of ratings
+</ResponseField>
+
+<ResponseField name="colorRating" type="string">
+  Rating category: `good`, `average`, or `bad`
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  Content type: `film`, `series`, `tv-film`, etc.
+</ResponseField>
+
+<ResponseField name="genres" type="string[]">
+  Array of genre names
+</ResponseField>
+
+<ResponseField name="origins" type="string[]">
+  Array of country names
+</ResponseField>
+
+<ResponseField name="descriptions" type="string[]">
+  Array of plot descriptions
+</ResponseField>
+
+<ResponseField name="creators" type="object">
+  Object containing directors, actors, writers, music, producers arrays
+</ResponseField>
+
+<ResponseField name="poster" type="string">
+  URL to movie poster image
+</ResponseField>
+
+<ResponseField name="url" type="string">
+  CSFD URL for the movie
+</ResponseField>
+
+### Example
+
+```bash
+curl http://localhost:3000/movie/535121
+```
+
+```bash
+curl "http://localhost:3000/movie/535121?language=en"
+```
+
+```json
+{
+  "id": 535121,
+  "title": "Na špatné straně",
+  "year": "2018",
+  "rating": 73,
+  "ratingCount": 6654,
+  "colorRating": "good",
+  "type": "film",
+  "genres": ["Krimi", "Drama", "Thriller"],
+  "origins": ["USA", "Kanada"],
+  "descriptions": ["Otupělý policejní veterán Ridgeman..."],
+  "creators": {
+    "directors": [
+      {
+        "id": 87470,
+        "name": "S. Craig Zahler",
+        "url": "https://www.csfd.cz/tvurce/87470-s-craig-zahler/"
+      }
+    ],
+    "actors": [...],
+    "writers": [...]
+  },
+  "poster": "https://image.pmgstatic.com/cache/resized/w1080/files/images/film/posters/163/579/163579352_bf8737.jpg",
+  "url": "https://www.csfd.cz/film/535121"
+}
+```
+
+<Note>
+  Movie IDs can be found in CSFD URLs: `https://www.csfd.cz/film/535121` → ID is `535121`
+</Note>
+
+---
+
+## Search
+
+<ParamField path="/search/:query" type="GET">
+  Search for movies, TV series, and users across the CSFD database.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="query" type="string" required>
+  Search query (URL-encoded)
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="language" type="string">
+  Language code for content. Supported values: `cs`, `en`, `sk`
+</ParamField>
+
+### Response
+
+<ResponseField name="movies" type="array">
+  Array of movie results matching the query
+</ResponseField>
+
+<ResponseField name="tvSeries" type="array">
+  Array of TV series results matching the query
+</ResponseField>
+
+<ResponseField name="users" type="array">
+  Array of user profiles matching the query
+</ResponseField>
+
+### Example
+
+```bash
+curl http://localhost:3000/search/tarantino
+```
+
+```bash
+curl "http://localhost:3000/search/matrix?language=en"
+```
+
+```json
+{
+  "movies": [
+    {
+      "id": 8852,
+      "title": "Pulp Fiction: Historky z podsvětí",
+      "year": "1994",
+      "type": "film",
+      "colorRating": "good",
+      "url": "https://www.csfd.cz/film/8852",
+      "origins": ["USA"],
+      "creators": {...}
+    }
+  ],
+  "tvSeries": [...],
+  "users": [...]
+}
+```
+
+---
+
+## Get Creator Details
+
+<ParamField path="/creator/:id" type="GET">
+  Get detailed information about a creator including biography and filmography.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="number" required>
+  The CSFD creator ID (e.g., `2120` for Quentin Tarantino)
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="language" type="string">
+  Language code for content. Supported values: `cs`, `en`, `sk`
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="number">
+  CSFD creator ID
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Creator's full name
+</ResponseField>
+
+<ResponseField name="birthday" type="string">
+  Birth date in DD.MM.YYYY format
+</ResponseField>
+
+<ResponseField name="birthplace" type="string">
+  Place of birth
+</ResponseField>
+
+<ResponseField name="age" type="number">
+  Current age
+</ResponseField>
+
+<ResponseField name="photo" type="string">
+  URL to creator's photo
+</ResponseField>
+
+<ResponseField name="bio" type="string">
+  Biography text
+</ResponseField>
+
+<ResponseField name="films" type="array">
+  Array of films with id, title, year, and colorRating
+</ResponseField>
+
+### Example
+
+```bash
+curl http://localhost:3000/creator/2120
+```
+
+```json
+{
+  "id": 2120,
+  "name": "Quentin Tarantino",
+  "birthday": "27.03.1963",
+  "birthplace": "Knoxville, Tennessee, USA",
+  "age": 58,
+  "photo": "https://image.pmgstatic.com/cache/resized/w100h132crop/files/images/creator/photos/164/515/164515525_b98f8a.jpg",
+  "bio": "Quentin Tarantino se narodil 27. března roku 1963...",
+  "films": [
+    {
+      "id": 527699,
+      "title": "Tenkrát v Hollywoodu",
+      "year": 2019,
+      "colorRating": "good"
+    }
+  ]
+}
+```
+
+---
+
+## Get User Ratings
+
+<ParamField path="/user-ratings/:id" type="GET">
+  Retrieve user ratings from their CSFD profile with pagination and filtering.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  Username or user ID (e.g., `912` or `912-bart`)
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="language" type="string">
+  Language code. Supported values: `cs`, `en`, `sk`
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number for pagination (default: `1`)
+</ParamField>
+
+<ParamField query="allPages" type="boolean">
+  Fetch all pages of ratings. Use with caution. (default: `false`)
+</ParamField>
+
+<ParamField query="allPagesDelay" type="number">
+  Delay in milliseconds between page requests when `allPages=true`
+</ParamField>
+
+<ParamField query="includesOnly" type="string">
+  Comma-separated list of content types to include: `film`, `series`, `episode`, `season`
+</ParamField>
+
+<ParamField query="excludes" type="string">
+  Comma-separated list of content types to exclude
+</ParamField>
+
+### Response
+
+Array of rating objects:
+
+<ResponseField name="title" type="string">
+  Content title
+</ResponseField>
+
+<ResponseField name="year" type="number">
+  Release year
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  Content type
+</ResponseField>
+
+<ResponseField name="url" type="string">
+  CSFD URL
+</ResponseField>
+
+<ResponseField name="colorRating" type="string">
+  CSFD rating category
+</ResponseField>
+
+<ResponseField name="userDate" type="string">
+  Date when user rated (DD.MM.YYYY)
+</ResponseField>
+
+<ResponseField name="userRating" type="number">
+  User's rating (1-5 stars)
+</ResponseField>
+
+### Examples
+
+```bash
+# Get first page of ratings
+curl http://localhost:3000/user-ratings/912-bart
+```
+
+```bash
+# Get specific page
+curl http://localhost:3000/user-ratings/912-bart?page=2
+```
+
+```bash
+# Get only movies
+curl "http://localhost:3000/user-ratings/912-bart?includesOnly=film"
+```
+
+```bash
+# Exclude episodes and seasons
+curl "http://localhost:3000/user-ratings/912-bart?excludes=episode,season"
+```
+
+```bash
+# Get all pages with 2-second delay between requests
+curl "http://localhost:3000/user-ratings/912-bart?allPages=true&allPagesDelay=2000"
+```
+
+```json
+[
+  {
+    "title": "David Attenborough: Život na naší planetě",
+    "year": 2020,
+    "type": "film",
+    "url": "https://www.csfd.cz/film/812944",
+    "colorRating": "good",
+    "userDate": "01.11.2020",
+    "userRating": 5
+  }
+]
+```
+
+<Warning>
+  When using `allPages=true`, always set an appropriate `allPagesDelay` (2000ms or more) to avoid overwhelming the CSFD servers and potential rate limiting.
+</Warning>
+
+---
+
+## Get User Reviews
+
+<ParamField path="/user-reviews/:id" type="GET">
+  Retrieve detailed user reviews from their CSFD profile.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  User ID (e.g., `195357` or `195357-verbal`)
+</ParamField>
+
+### Query Parameters
+
+Same as [User Ratings](#get-user-ratings) endpoint.
+
+### Response
+
+Array of review objects (includes all rating fields plus):
+
+<ResponseField name="id" type="number">
+  Review ID
+</ResponseField>
+
+<ResponseField name="text" type="string">
+  Review text content
+</ResponseField>
+
+<ResponseField name="poster" type="string">
+  URL to movie poster
+</ResponseField>
+
+### Example
+
+```bash
+curl http://localhost:3000/user-reviews/195357
+```
+
+```bash
+curl "http://localhost:3000/user-reviews/195357?page=2&includesOnly=film"
+```
+
+```json
+[
+  {
+    "id": 1391448,
+    "title": "Co s Péťou?",
+    "year": 2025,
+    "type": "film",
+    "url": "https://www.csfd.cz/film/1391448",
+    "colorRating": "good",
+    "userDate": "27.11.2025",
+    "userRating": 4,
+    "text": "Co s Péťou? Inu, co by? Každý normální Sparťan...",
+    "poster": "https://image.pmgstatic.com/cache/resized/w240h339/files/images/film/posters/170/492/170492173_1l3djd.jpg"
+  }
+]
+```
+
+---
+
+## Get Cinema Listings
+
+<ParamField path="/cinemas" type="GET">
+  Get cinema listings for today.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="language" type="string">
+  Language code. Supported values: `cs`, `en`, `sk`
+</ParamField>
+
+### Response
+
+Returns cinema showtimes and listings for the current day.
+
+### Example
+
+```bash
+curl http://localhost:3000/cinemas
+```
+
+```bash
+curl "http://localhost:3000/cinemas?language=cs"
+```
+
+---
+
+## Error Responses
+
+All endpoints return consistent error objects:
+
+```json
+{
+  "error": "ERROR_CODE",
+  "message": "Human-readable error message"
+}
+```
+
+### Common Error Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `ID_MISSING` | `404` | ID parameter is missing from the request |
+| `MOVIE_FETCH_FAILED` | `500` | Failed to fetch movie data |
+| `CREATOR_FETCH_FAILED` | `500` | Failed to fetch creator data |
+| `SEARCH_FETCH_FAILED` | `500` | Failed to fetch search results |
+| `USER_RATINGS_FETCH_FAILED` | `500` | Failed to fetch user ratings |
+| `USER_REVIEWS_FETCH_FAILED` | `500` | Failed to fetch user reviews |
+| `CINEMAS_FETCH_FAILED` | `500` | Failed to fetch cinema data |
+| `PAGE_NOT_FOUND` | `404` | Endpoint does not exist |
+| `API_KEY_MISSING` | `401` | API key required but not provided |
+| `API_KEY_INVALID` | `401` | Invalid API key |
+
+### Error Example
+
+```bash
+curl http://localhost:3000/movie/
+```
+
+```json
+{
+  "error": "ID_MISSING",
+  "message": "ID is missing. Provide ID like this: /movie/1234"
+}
+```
+
+<Tip>
+  Use the root endpoint `/` to discover all available endpoints and their current paths.
+</Tip>

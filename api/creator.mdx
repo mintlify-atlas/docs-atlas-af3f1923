@@ -1,0 +1,201 @@
+---
+title: 'creator()'
+description: 'Get detailed information about a creator including biography and filmography'
+---
+
+The `creator()` method retrieves comprehensive information about a creator (director, actor, writer, etc.) from ČSFD, including their biography and complete filmography.
+
+## Signature
+
+```typescript
+csfd.creator(creator: number, options?: CSFDOptions): Promise<CSFDCreator>
+```
+
+## Parameters
+
+<ParamField path="creator" type="number" required>
+  The ČSFD creator ID. You can find this in the creator's URL:
+  `https://www.csfd.cz/tvurce/2120-quentin-tarantino` → ID is `2120`
+</ParamField>
+
+<ParamField path="options" type="CSFDOptions" optional>
+  Override default options for this request
+  
+  <Expandable title="properties">
+    <ParamField path="language" type="'cs' | 'en' | 'sk'" optional>
+      Preferred language for content (default: 'cs')
+    </ParamField>
+    
+    <ParamField path="request" type="RequestInit" optional>
+      Custom fetch request options (headers, timeout, etc.)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+<ResponseField name="CSFDCreator" type="object">
+  Complete creator information including biography and filmography
+  
+  <Expandable title="properties">
+    <ResponseField name="id" type="number">
+      ČSFD creator ID
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Creator's full name
+    </ResponseField>
+    
+    <ResponseField name="birthday" type="string | null">
+      Birth date (format: DD.MM.YYYY)
+    </ResponseField>
+    
+    <ResponseField name="birthplace" type="string">
+      Place of birth
+    </ResponseField>
+    
+    <ResponseField name="photo" type="string">
+      URL to the creator's photo
+    </ResponseField>
+    
+    <ResponseField name="age" type="number | string">
+      Creator's age or age-related text
+    </ResponseField>
+    
+    <ResponseField name="bio" type="string">
+      Biography text (may be truncated)
+    </ResponseField>
+    
+    <ResponseField name="films" type="CSFDCreatorScreening[]">
+      Complete filmography
+      
+      <Expandable title="film properties">
+        <ResponseField name="id" type="number">
+          Movie ID
+        </ResponseField>
+        <ResponseField name="title" type="string">
+          Movie title
+        </ResponseField>
+        <ResponseField name="year" type="number">
+          Release year
+        </ResponseField>
+        <ResponseField name="colorRating" type="'bad' | 'average' | 'good' | 'unknown'">
+          Overall rating indicator:
+          - 'good': 70% – 100% (red color on ČSFD)
+          - 'average': 30% – 69% (blue color)
+          - 'bad': 0% – 29% (black color)
+          - 'unknown': No rating (gray color)
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+### Basic Usage
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+const creator = await csfd.creator(2120); // Quentin Tarantino
+
+console.log(creator.name); // "Quentin Tarantino"
+console.log(creator.birthday); // "27.03.1963"
+console.log(creator.birthplace); // "Knoxville, Tennessee, USA"
+console.log(creator.age); // 58
+```
+
+### Accessing Filmography
+
+```typescript
+const creator = await csfd.creator(2120);
+
+// Display all films
+creator.films.forEach(film => {
+  console.log(`${film.title} (${film.year}) - ${film.colorRating}`);
+});
+
+// Output:
+// Tenkrát v Hollywoodu (2019) - good
+// Osm hrozných (2015) - good
+// Nespoutaný Django (2012) - good
+// ...
+```
+
+### Filter by Rating
+
+```typescript
+const creator = await csfd.creator(2120);
+
+// Get only highly-rated films
+const topFilms = creator.films.filter(film => film.colorRating === 'good');
+
+console.log(`${creator.name} has ${topFilms.length} highly-rated films`);
+```
+
+### Find Specific Film
+
+```typescript
+const creator = await csfd.creator(2120);
+
+// Find a specific film by title
+const pulpFiction = creator.films.find(film => 
+  film.title.includes('Pulp Fiction')
+);
+
+if (pulpFiction) {
+  console.log(`Film ID: ${pulpFiction.id}`);
+  
+  // Get full movie details
+  const movieDetails = await csfd.movie(pulpFiction.id);
+}
+```
+
+### Display Biography
+
+```typescript
+const creator = await csfd.creator(2120);
+
+console.log(`Name: ${creator.name}`);
+console.log(`Born: ${creator.birthday} in ${creator.birthplace}`);
+console.log(`Age: ${creator.age}`);
+console.log(`\nBiography:\n${creator.bio}`);
+console.log(`\nPhoto: ${creator.photo}`);
+```
+
+### Find Creator via Search
+
+```typescript
+import { csfd } from 'node-csfd-api';
+
+// First search for the creator
+const searchResults = await csfd.search('Christopher Nolan');
+
+if (searchResults.creators.length > 0) {
+  const creatorId = searchResults.creators[0].id;
+  
+  // Then get full details
+  const creator = await csfd.creator(creatorId);
+  
+  console.log(`${creator.name} has directed ${creator.films.length} films`);
+}
+```
+
+### With Language Option
+
+```typescript
+const creator = await csfd.creator(2120, {
+  language: 'en'
+});
+
+// Biography and some fields may be in English when available
+console.log(creator.bio);
+```
+
+## Related
+
+- [CSFDCreator Type](/api/types/creator-types)
+- [CSFDOptions Type](/api/types/common-types)
+- [search()](/api/search) - Search for creators
+- [movie()](/api/movie) - Get movie details from filmography

@@ -1,0 +1,270 @@
+---
+title: Search
+description: Search for movies, TV series, and users across the ČSFD database
+---
+
+The `search()` method allows you to search for content across the entire ČSFD database. It returns movies, TV series, creators, and users that match your search query.
+
+## Method Signature
+
+```typescript
+csfd.search(query: string, options?: CSFDOptions): Promise<CSFDSearch>
+```
+
+## Parameters
+
+<ParamField path="query" type="string" required>
+  Search query string. Can be a movie title, person name, or username.
+</ParamField>
+
+<ParamField path="options" type="CSFDOptions">
+  Optional configuration object
+  
+  <Expandable title="properties">
+    <ParamField path="language" type="'cs' | 'en' | 'sk'">
+      Language variant to use. Defaults to `'cs'` (Czech)
+    </ParamField>
+    
+    <ParamField path="request" type="object">
+      Custom request options (headers, cookies, etc.)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return Type
+
+<ResponseField name="CSFDSearch" type="object">
+  Search results containing movies, TV series, creators, and users
+  
+  <Expandable title="properties">
+    <ResponseField name="movies" type="CSFDSearchMovie[]">
+      Array of matching movies
+      
+      <Expandable title="properties">
+        <ResponseField name="id" type="number">
+          ČSFD movie ID
+        </ResponseField>
+        
+        <ResponseField name="title" type="string">
+          Movie title
+        </ResponseField>
+        
+        <ResponseField name="year" type="number">
+          Release year
+        </ResponseField>
+        
+        <ResponseField name="url" type="string">
+          Full URL to the movie on ČSFD
+        </ResponseField>
+        
+        <ResponseField name="type" type="CSFDFilmTypes">
+          Content type (e.g., `'film'`, `'tv-film'`, `'tv-show'`)
+        </ResponseField>
+        
+        <ResponseField name="colorRating" type="'bad' | 'average' | 'good' | 'unknown'">
+          Overall rating quality indicator
+        </ResponseField>
+        
+        <ResponseField name="poster" type="string">
+          URL to poster image
+        </ResponseField>
+        
+        <ResponseField name="origins" type="string[]">
+          Countries of origin
+        </ResponseField>
+        
+        <ResponseField name="creators" type="object">
+          Cast and crew information
+          
+          <Expandable title="properties">
+            <ResponseField name="directors" type="CSFDMovieCreator[]">
+              Directors with id, name, and url
+            </ResponseField>
+            <ResponseField name="actors" type="CSFDMovieCreator[]">
+              Main actors with id, name, and url
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="tvSeries" type="CSFDSearchMovie[]">
+      Array of matching TV series (same structure as movies)
+    </ResponseField>
+    
+    <ResponseField name="creators" type="CSFDSearchCreator[]">
+      Array of matching creators (directors, actors, etc.)
+      
+      <Expandable title="properties">
+        <ResponseField name="id" type="number">
+          Creator ID
+        </ResponseField>
+        <ResponseField name="name" type="string">
+          Creator name
+        </ResponseField>
+        <ResponseField name="url" type="string">
+          URL to creator profile
+        </ResponseField>
+        <ResponseField name="image" type="string">
+          Profile photo URL
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="users" type="CSFDSearchUser[]">
+      Array of matching ČSFD users
+      
+      <Expandable title="properties">
+        <ResponseField name="id" type="number">
+          User ID
+        </ResponseField>
+        
+        <ResponseField name="user" type="string">
+          Username
+        </ResponseField>
+        
+        <ResponseField name="userRealName" type="string">
+          Real name (if public)
+        </ResponseField>
+        
+        <ResponseField name="avatar" type="string">
+          Avatar image URL
+        </ResponseField>
+        
+        <ResponseField name="url" type="string">
+          URL to user profile
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Usage Examples
+
+<Tabs>
+  <Tab title="Basic Search">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Search for content
+    const results = await csfd.search('Tarantino');
+    
+    console.log(results.movies);    // Array of movies
+    console.log(results.tvSeries);  // Array of TV series
+    console.log(results.users);     // Array of users
+    ```
+  </Tab>
+  
+  <Tab title="Search Movies">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const results = await csfd.search('bart');
+    
+    // Access movie results
+    results.movies.forEach(movie => {
+      console.log(`${movie.title} (${movie.year})`);
+      console.log(`Rating: ${movie.colorRating}`);
+      console.log(`URL: ${movie.url}`);
+    });
+    ```
+  </Tab>
+  
+  <Tab title="Search Users">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const results = await csfd.search('bart');
+    
+    // Access user results
+    results.users.forEach(user => {
+      console.log(`${user.user} - ${user.userRealName}`);
+      console.log(`Avatar: ${user.avatar}`);
+    });
+    ```
+  </Tab>
+  
+  <Tab title="Filter by Type">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const results = await csfd.search('Kingdom');
+    
+    // Filter TV series only
+    const series = results.tvSeries.filter(
+      item => item.type === 'series'
+    );
+    
+    // Filter films only
+    const films = results.movies.filter(
+      item => item.type === 'film'
+    );
+    ```
+  </Tab>
+</Tabs>
+
+<Accordion title="Example Response">
+```json
+{
+  "movies": [
+    {
+      "id": 19653,
+      "title": "Black Bart",
+      "year": "1975",
+      "url": "https://www.csfd.cz/film/19653-black-bart/",
+      "type": "tv-film",
+      "colorRating": "bad",
+      "poster": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "origins": ["USA"],
+      "creators": {
+        "directors": [
+          {
+            "id": 87470,
+            "name": "S. Craig Zahler",
+            "url": "https://www.csfd.cz/tvurce/87470-s-craig-zahler/"
+          }
+        ],
+        "actors": [
+          {
+            "id": 1,
+            "name": "Mel Gibson",
+            "url": "https://www.csfd.cz/tvurce/1-mel-gibson/"
+          }
+        ]
+      }
+    }
+  ],
+  "tvSeries": [
+    {
+      "id": 71924,
+      "title": "Království",
+      "year": 1994,
+      "url": "https://www.csfd.cz/film/71924-kralovstvi/",
+      "type": "series",
+      "colorRating": "good",
+      "poster": "https://image.pmgstatic.com/cache/resized/w60h85/files/images/film/posters/166/708/166708064_2da697.jpg",
+      "origins": ["Dánsko"],
+      "creators": []
+    }
+  ],
+  "users": [
+    {
+      "id": 912,
+      "user": "BART!",
+      "userRealName": "Lukáš Barták",
+      "avatar": "https://image.pmgstatic.com/cache/resized/w45h60/files/images/user/avatars/000/281/281554_1c0fef.jpg",
+      "url": "https://www.csfd.cz/uzivatel/912-bart/"
+    }
+  ],
+  "creators": []
+}
+```
+</Accordion>
+
+<Note>
+Search results are limited to what ČSFD returns on the first page. For more specific results, try using more detailed search queries.
+</Note>
+
+<Tip>
+You can use the returned IDs to fetch detailed information using the `movie()` or `creator()` methods.
+</Tip>

@@ -1,0 +1,268 @@
+---
+title: 'MCP Server Setup'
+description: 'How to install and configure the ČSFD MCP Server'
+---
+
+The ČSFD MCP (Model Context Protocol) Server allows AI agents to access ČSFD data directly. This guide covers installation, configuration, and testing.
+
+## Installation
+
+The MCP server is included in the `node-csfd-api` package. No separate installation is required.
+
+### Prerequisites
+
+- Node.js 18 or higher
+- npm, yarn, or pnpm package manager
+- An MCP-compatible client (e.g., Claude Desktop)
+
+### Option 1: NPX (Recommended)
+
+No installation needed - use npx to run the server directly:
+
+```bash
+npx -y node-csfd-api mcp
+```
+
+This is the recommended approach for most users as it always uses the latest version.
+
+### Option 2: Global Installation
+
+Install the package globally:
+
+```bash
+npm install -g node-csfd-api
+```
+
+Then run:
+
+```bash
+node-csfd-api mcp
+```
+
+### Option 3: Homebrew (macOS/Linux)
+
+For macOS and Linux users:
+
+```bash
+brew install bartholomej/tap/csfd
+csfd mcp
+```
+
+## Running the MCP Server
+
+<Steps>
+  <Step title="Start the server">
+    Run the MCP server via npx:
+    
+    ```bash
+    npx -y node-csfd-api mcp
+    ```
+    
+    You should see output similar to:
+    
+    ```
+    --- CSFD MCP Server (v2.x.x) ---
+    Status: Running via Stdio
+    
+    To use this server in Claude Desktop, add this to your config:
+    {
+      "node-csfd-api": {
+        "command": "npx",
+        "args": ["-y", "node-csfd-api", "mcp"]
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Configure your MCP client">
+    Add the configuration to your MCP client. For Claude Desktop, see the [Claude Desktop Integration](/api/mcp/claude-desktop) guide.
+  </Step>
+  
+  <Step title="Test the connection">
+    Your MCP client should now be able to access ČSFD tools. Try a simple search query to verify.
+  </Step>
+</Steps>
+
+## Configuration
+
+The MCP server runs via **stdio transport** and doesn't require additional configuration. It automatically:
+
+- Initializes with package name and version
+- Registers all available tools
+- Handles requests/responses via standard input/output
+
+### Server Information
+
+The server exposes:
+
+- **Name:** `node-csfd-api`
+- **Version:** Auto-detected from package.json
+- **Transport:** Stdio (Standard Input/Output)
+- **Tools:** 6 tools (search, get_movie, get_creator, get_user_ratings, get_user_reviews, get_cinemas)
+- **Prompts:** 1 prompt (actor-top-rated)
+
+## Testing the Server
+
+### Manual Testing
+
+You can test the server directly from the command line:
+
+```bash
+# Run the server
+npx -y node-csfd-api mcp
+```
+
+The server will output its configuration and wait for JSON-RPC requests via stdin.
+
+### Testing with an MCP Client
+
+The easiest way to test is through an MCP-compatible client like Claude Desktop:
+
+1. Configure the client (see [Claude Desktop Integration](/api/mcp/claude-desktop))
+2. Ask the AI to search for a movie:
+   ```
+   Search for "Pulp Fiction" on ČSFD
+   ```
+3. The AI should use the `search` tool and return results
+
+### Common Test Queries
+
+<CodeGroup>
+```text Search for a movie
+Find the movie "Inception" on ČSFD
+```
+
+```text Get movie details
+Get details for ČSFD movie ID 228329
+```
+
+```text Find creator info
+Find information about Quentin Tarantino
+```
+
+```text User ratings
+Show me user ratings for ČSFD user 912
+```
+</CodeGroup>
+
+## Troubleshooting
+
+### Server Won't Start
+
+**Problem:** Server fails to start or crashes immediately
+
+**Solutions:**
+- Ensure Node.js 18+ is installed: `node --version`
+- Try clearing npm cache: `npm cache clean --force`
+- Use the npx command with `-y` flag: `npx -y node-csfd-api mcp`
+
+### Client Can't Connect
+
+**Problem:** MCP client doesn't recognize the server
+
+**Solutions:**
+- Verify the configuration file path is correct
+- Check that JSON syntax in config is valid
+- Restart the MCP client after configuration changes
+- Check client logs for error messages
+
+### Tools Not Working
+
+**Problem:** Tools are registered but return errors
+
+**Solutions:**
+- Check your internet connection (server scrapes live ČSFD data)
+- ČSFD might be temporarily unavailable - try again later
+- Some IDs might not exist - verify IDs using the search tool first
+
+### Rate Limiting Issues
+
+**Problem:** Getting blocked or slow responses
+
+**Solutions:**
+- Use `allPagesDelay` parameter when fetching multiple pages
+- Recommended delay: 2000ms (2 seconds) between requests
+- Avoid using `allPages: true` for large datasets
+- Consider caching results on your client side
+
+### stdio Transport Errors
+
+**Problem:** "Transport error" or "broken pipe" messages
+
+**Solutions:**
+- Ensure no other process is using the same stdio stream
+- Don't run the server interactively - let the MCP client manage it
+- Check that the command path in client config is correct
+
+<Note>
+  The MCP server communicates via stdio (standard input/output), so it should be launched by your MCP client, not run directly in an interactive terminal.
+</Note>
+
+## Advanced Configuration
+
+### Development Mode
+
+For developers working on the MCP server:
+
+```bash
+# Clone the repository
+git clone https://github.com/bartholomej/node-csfd-api.git
+cd node-csfd-api
+
+# Install dependencies
+yarn install
+
+# Build the project
+yarn build
+
+# Run the MCP server from local build
+node dist/bin/mcp-server.js
+```
+
+### Using with Docker
+
+While the MCP server is designed for stdio transport, you can also run the REST API server via Docker and access the same data:
+
+```bash
+docker pull bartholomej/node-csfd-api
+docker run -p 3000:3000 bartholomej/node-csfd-api
+```
+
+See [Docker Support](/advanced/docker) for more details.
+
+## Security Considerations
+
+<Warning>
+  The MCP server makes requests to ČSFD.cz. Be respectful of their infrastructure:
+  - Implement rate limiting
+  - Cache responses when possible
+  - Don't abuse the `allPages` parameter
+  - Follow ČSFD's terms of service
+</Warning>
+
+### Privacy
+
+- The server **does not collect or store any data**
+- All requests go directly to ČSFD.cz
+- No intermediary servers or logging
+- No telemetry or analytics
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Claude Desktop Integration" icon="robot" href="/api/mcp/claude-desktop">
+    Set up the MCP server with Claude Desktop
+  </Card>
+  
+  <Card title="Available Tools" icon="wrench" href="/api/mcp/tools">
+    Explore all available MCP tools
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api/reference">
+    View the full API documentation
+  </Card>
+  
+  <Card title="GitHub Repository" icon="github" href="https://github.com/bartholomej/node-csfd-api">
+    View source code and contribute
+  </Card>
+</CardGroup>

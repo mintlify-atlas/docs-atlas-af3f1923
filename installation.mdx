@@ -1,0 +1,211 @@
+---
+title: Installation
+description: Install node-csfd-api via npm, yarn, pnpm, Homebrew, or Docker
+---
+
+# Installation
+
+Choose your preferred installation method to get started with node-csfd-api.
+
+## Node.js requirements
+
+<Info>
+node-csfd-api requires **Node.js 18 or higher**. Make sure your Node version meets this requirement before installing.
+</Info>
+
+You can check your Node version by running:
+
+```bash
+node --version
+```
+
+## Package manager installation
+
+Install the library as a dependency in your Node.js project:
+
+<Steps>
+  <Step title="Install the package">
+    Use your preferred package manager to install node-csfd-api:
+
+    <CodeGroup>
+      ```bash npm
+      npm install node-csfd-api
+      ```
+
+      ```bash yarn
+      yarn add node-csfd-api
+      ```
+
+      ```bash pnpm
+      pnpm add node-csfd-api
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Verify installation">
+    Create a simple test file to verify the installation:
+
+    ```typescript test.ts
+    import { csfd } from 'node-csfd-api';
+
+    csfd.movie(535121).then((movie) => {
+      console.log(movie.title); // Should print: "Na špatné straně"
+    });
+    ```
+
+    Run the test file:
+
+    ```bash
+    node test.ts
+    ```
+  </Step>
+</Steps>
+
+## CLI installation via Homebrew
+
+For macOS and Linux users, you can install the CLI globally using Homebrew:
+
+<Steps>
+  <Step title="Add the tap">
+    First, add the bartholomej/tap repository:
+
+    ```bash
+    brew tap bartholomej/tap
+    ```
+  </Step>
+
+  <Step title="Install the CLI">
+    Install the csfd command-line tool:
+
+    ```bash
+    brew install csfd
+    ```
+  </Step>
+
+  <Step title="Verify CLI installation">
+    Test the CLI by exporting some ratings:
+
+    ```bash
+    csfd export ratings 912
+    ```
+
+    This should export ratings for user 912 to a CSV file.
+  </Step>
+</Steps>
+
+<Note>
+The Homebrew installation provides the `csfd` command globally. If you only need the library in your project, use the npm/yarn/pnpm installation instead.
+</Note>
+
+## Docker installation
+
+Run the CSFD API as a standalone REST service using Docker:
+
+<Steps>
+  <Step title="Pull the image">
+    Pull the latest pre-built Docker image:
+
+    ```bash
+    docker pull bartholomej/node-csfd-api
+    ```
+  </Step>
+
+  <Step title="Run the container">
+    Start the container and expose it on port 3000:
+
+    ```bash
+    docker run -p 3000:3000 bartholomej/node-csfd-api
+    ```
+  </Step>
+
+  <Step title="Test the API">
+    Test the REST API by making a request:
+
+    ```bash
+    curl http://localhost:3000/movie/535121
+    ```
+
+    You should receive JSON data for the movie.
+  </Step>
+</Steps>
+
+### Building your own image
+
+If you want to customize the Docker image:
+
+```bash
+# Clone the repository
+git clone https://github.com/bartholomej/node-csfd-api.git
+cd node-csfd-api
+
+# Build the image
+docker build -t node-csfd-api .
+
+# Run your custom image
+docker run -p 3000:3000 node-csfd-api
+```
+
+## NPX usage (no installation)
+
+You can run the CLI tools without installing anything using npx:
+
+```bash
+# Export ratings to CSV
+npx node-csfd-api export ratings 912
+
+# Export to JSON
+npx node-csfd-api export ratings 912 --json
+
+# Export to Letterboxd format
+npx node-csfd-api export ratings 912 --letterboxd
+
+# Start REST API server
+npx node-csfd-api server
+
+# Start MCP server
+npx node-csfd-api mcp
+```
+
+<Note>
+Using npx downloads and runs the package on-demand without permanent installation. This is great for one-time operations.
+</Note>
+
+## Module system support
+
+The library supports both ESM (ES Modules) and CommonJS:
+
+<CodeGroup>
+  ```typescript ESM (import)
+  import { csfd } from 'node-csfd-api';
+
+  const movie = await csfd.movie(535121);
+  console.log(movie.title);
+  ```
+
+  ```javascript CommonJS (require)
+  const { csfd } = require('node-csfd-api');
+
+  csfd.movie(535121).then((movie) => {
+    console.log(movie.title);
+  });
+  ```
+</CodeGroup>
+
+## TypeScript support
+
+The library is written in TypeScript and includes full type definitions out of the box. No need to install separate `@types` packages.
+
+```typescript
+import { csfd, CSFDMovie } from 'node-csfd-api';
+
+const movie: CSFDMovie = await csfd.movie(535121);
+// Full autocomplete and type checking available
+```
+
+## Next steps
+
+Now that you have the library installed, continue to the quickstart guide to make your first API call:
+
+<Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+  Learn how to fetch movie data, search content, and access creator information
+</Card>

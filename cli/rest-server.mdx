@@ -1,0 +1,440 @@
+---
+title: REST API Server
+description: Run a standalone REST API server for the ČSFD API
+---
+
+The REST server command starts a standalone Express.js server that exposes ČSFD data through HTTP endpoints.
+
+## Quick Start
+
+<Steps>
+  <Step title="Start the Server">
+    ```bash
+    npx node-csfd-api server
+    ```
+    
+    You should see:
+    ```bash
+                      _                  __    _               _
+                     | |                / _|  | |             (_)
+      _ __   ___   __| | ___    ___ ___| |_ __| |   __ _ _ __  _
+     | '_ \ / _ \ / _` |/ _ \  / __/ __|  _/ _` |  / _` | '_ \| |
+     | | | | (_) | (_| |  __/ | (__\__ \ || (_| | | (_| | |_) | |
+     |_| |_|\___/ \__,_|\___|  \___|___/_| \__,_|  \__,_| .__/|_|
+                                                        | |
+                                                        |_|
+    
+    node-csfd-api@5.1.0
+    
+    API is running on: http://localhost:3000
+    ```
+  </Step>
+  
+  <Step title="Test the API">
+    Open your browser or use curl:
+    ```bash
+    curl http://localhost:3000/
+    ```
+  </Step>
+</Steps>
+
+## Available Endpoints
+
+### Root Endpoint
+
+<CodeGroup>
+```bash cURL
+curl http://localhost:3000/
+```
+
+```json Response
+{
+  "name": "node-csfd-api",
+  "version": "5.1.0",
+  "docs": "https://github.com/bartholomej/node-csfd-api#readme",
+  "links": [
+    "/movie/:id",
+    "/creator/:id",
+    "/search/:query",
+    "/user-ratings/:id",
+    "/user-reviews/:id",
+    "/cinemas"
+  ]
+}
+```
+</CodeGroup>
+
+### Movie Details
+
+Get comprehensive information about a movie or TV series.
+
+<CodeGroup>
+```bash cURL
+curl http://localhost:3000/movie/535121
+```
+
+```bash With Language
+curl http://localhost:3000/movie/535121?language=en
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:3000/movie/535121');
+const movie = await response.json();
+console.log(movie.title, movie.rating);
+```
+</CodeGroup>
+
+**Path:** `/movie/:id`
+
+<ParamField path="id" type="number" required>
+  ČSFD movie/series ID
+</ParamField>
+
+<ParamField query="language" type="string">
+  Response language (`cs`, `en`, `sk`). Defaults to server configuration.
+</ParamField>
+
+### Search
+
+Search for movies, TV series, and users.
+
+<CodeGroup>
+```bash cURL
+curl http://localhost:3000/search/tarantino
+```
+
+```bash URL Encoded
+curl http://localhost:3000/search/quentin%20tarantino
+```
+
+```javascript JavaScript
+const query = encodeURIComponent('quentin tarantino');
+const response = await fetch(`http://localhost:3000/search/${query}`);
+const results = await response.json();
+```
+</CodeGroup>
+
+**Path:** `/search/:query`
+
+<ParamField path="query" type="string" required>
+  Search query (URL-encoded)
+</ParamField>
+
+<ParamField query="language" type="string">
+  Response language (`cs`, `en`, `sk`)
+</ParamField>
+
+### Creator Details
+
+Get information about actors, directors, and other creators.
+
+<CodeGroup>
+```bash cURL
+curl http://localhost:3000/creator/2120
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:3000/creator/2120');
+const creator = await response.json();
+console.log(creator.name); // "Quentin Tarantino"
+```
+</CodeGroup>
+
+**Path:** `/creator/:id`
+
+<ParamField path="id" type="number" required>
+  ČSFD creator ID
+</ParamField>
+
+### User Ratings
+
+Retrieve user ratings with optional pagination and filtering.
+
+<CodeGroup>
+```bash Basic
+curl http://localhost:3000/user-ratings/912-bart
+```
+
+```bash With Pagination
+curl "http://localhost:3000/user-ratings/912-bart?page=2"
+```
+
+```bash With Filters
+curl "http://localhost:3000/user-ratings/912-bart?includesOnly=film&allPages=true&allPagesDelay=1000"
+```
+</CodeGroup>
+
+**Path:** `/user-ratings/:id`
+
+<ParamField path="id" type="string" required>
+  ČSFD user ID or username
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number (default: 1)
+</ParamField>
+
+<ParamField query="allPages" type="boolean">
+  Fetch all pages (`true` or `false`)
+</ParamField>
+
+<ParamField query="allPagesDelay" type="number">
+  Delay in ms between page requests (default: 0)
+</ParamField>
+
+<ParamField query="includesOnly" type="string">
+  Comma-separated content types to include (e.g., `film,series`)
+</ParamField>
+
+<ParamField query="excludes" type="string">
+  Comma-separated content types to exclude (e.g., `episode`)
+</ParamField>
+
+### User Reviews
+
+Retrieve detailed user reviews.
+
+<CodeGroup>
+```bash cURL
+curl http://localhost:3000/user-reviews/195357
+```
+
+```bash With Options
+curl "http://localhost:3000/user-reviews/195357?page=1&includesOnly=film"
+```
+</CodeGroup>
+
+**Path:** `/user-reviews/:id`
+
+<Note>
+Accepts the same query parameters as `/user-ratings/:id`
+</Note>
+
+### Cinemas
+
+Get cinema screenings (currently hardcoded to district 1, today).
+
+<CodeGroup>
+```bash cURL
+curl http://localhost:3000/cinemas
+```
+</CodeGroup>
+
+**Path:** `/cinemas`
+
+## Configuration
+
+### Port Configuration
+
+Change the server port using the `PORT` environment variable:
+
+```bash
+PORT=8080 npx node-csfd-api server
+```
+
+### Language Configuration
+
+Set a default language for all responses:
+
+```bash
+LANGUAGE=en npx node-csfd-api server
+```
+
+Supported languages:
+- `cs` - Czech (default)
+- `en` - English
+- `sk` - Slovak
+
+<Note>
+Clients can override the default language using the `?language=` query parameter on any endpoint.
+</Note>
+
+### API Key Protection
+
+Protect your server with API keys:
+
+```bash
+API_KEY=your-secret-key npx node-csfd-api server
+```
+
+Clients must include the key in the request header:
+
+```bash
+curl -H "x-api-key: your-secret-key" http://localhost:3000/movie/535121
+```
+
+**Multiple API Keys:**
+
+```bash
+API_KEY="key1,key2,key3" npx node-csfd-api server
+```
+
+**Custom Header Name:**
+
+```bash
+API_KEY_NAME=Authorization API_KEY=secret npx node-csfd-api server
+```
+
+<Warning>
+Without API key protection, your server is **open to the world**. Anyone can access it without restrictions.
+</Warning>
+
+### Verbose Logging
+
+Enable detailed request logging:
+
+```bash
+VERBOSE=true npx node-csfd-api server
+```
+
+This logs every successful request with timing and IP information.
+
+## Docker Deployment
+
+### Using Pre-built Image
+
+<Steps>
+  <Step title="Pull the Image">
+    ```bash
+    docker pull bartholomej/node-csfd-api
+    ```
+  </Step>
+  
+  <Step title="Run the Container">
+    ```bash
+    docker run -p 3000:3000 bartholomej/node-csfd-api
+    ```
+  </Step>
+  
+  <Step title="Access the API">
+    ```bash
+    curl http://localhost:3000/
+    ```
+  </Step>
+</Steps>
+
+### With Environment Variables
+
+```bash
+docker run -p 8080:8080 \
+  -e PORT=8080 \
+  -e API_KEY=your-secret \
+  -e LANGUAGE=en \
+  bartholomej/node-csfd-api
+```
+
+### Docker Compose
+
+```yaml docker-compose.yml
+version: '3.8'
+services:
+  csfd-api:
+    image: bartholomej/node-csfd-api
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - API_KEY=your-secret-key
+      - LANGUAGE=en
+      - VERBOSE=true
+    restart: unless-stopped
+```
+
+Run with:
+```bash
+docker-compose up -d
+```
+
+## Error Handling
+
+The server returns structured error responses:
+
+<CodeGroup>
+```json Missing ID
+{
+  "error": "ID_MISSING",
+  "message": "ID is missing. Provide ID like this: /movie/1234"
+}
+```
+
+```json Invalid API Key
+{
+  "error": "API_KEY_INVALID",
+  "message": "Invalid API key in request header: x-api-key"
+}
+```
+
+```json Fetch Failed
+{
+  "error": "MOVIE_FETCH_FAILED",
+  "message": "Failed to fetch movie data: ..."
+}
+```
+</CodeGroup>
+
+### HTTP Status Codes
+
+| Code | Description |
+|------|-------------|
+| `200` | Success |
+| `401` | Missing or invalid API key |
+| `404` | Endpoint or resource not found |
+| `500` | Server error (failed to fetch from ČSFD) |
+
+## Complete Example: Production Setup
+
+<Steps>
+  <Step title="Create .env File">
+    ```bash .env
+    PORT=3000
+    API_KEY=super-secret-key-change-me
+    API_KEY_NAME=x-api-key
+    LANGUAGE=en
+    VERBOSE=true
+    ```
+  </Step>
+  
+  <Step title="Start with Docker Compose">
+    ```yaml docker-compose.yml
+    version: '3.8'
+    services:
+      csfd-api:
+        image: bartholomej/node-csfd-api
+        ports:
+          - "3000:3000"
+        env_file:
+          - .env
+        restart: unless-stopped
+        healthcheck:
+          test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+          interval: 30s
+          timeout: 10s
+          retries: 3
+    ```
+  </Step>
+  
+  <Step title="Deploy">
+    ```bash
+    docker-compose up -d
+    ```
+  </Step>
+  
+  <Step title="Test">
+    ```bash
+    curl -H "x-api-key: super-secret-key-change-me" \
+      http://localhost:3000/search/tarantino
+    ```
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="REST API Endpoints" icon="book" href="/api/rest/endpoints">
+    Explore all available endpoints and responses
+  </Card>
+  
+  <Card title="Docker Hub" icon="docker" href="https://hub.docker.com/r/bartholomej/node-csfd-api">
+    View the official Docker image
+  </Card>
+</CardGroup>

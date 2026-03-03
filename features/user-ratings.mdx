@@ -1,0 +1,239 @@
+---
+title: User Ratings
+description: Retrieve user ratings from ČSFD profiles with pagination and filtering
+---
+
+The `userRatings()` method retrieves a user's movie and TV show ratings from their ČSFD profile. It supports pagination, filtering by content type, and bulk fetching.
+
+## Method Signature
+
+```typescript
+csfd.userRatings(
+  username: string | number,
+  config?: UserRatingsOptions,
+  options?: CSFDOptions
+): Promise<CSFDUserRatings[]>
+```
+
+## Parameters
+
+<ParamField path="username" type="string | number" required>
+  ČSFD username or user ID. Can be in format `"912"`, `"912-bart"`, or just the numeric ID `912`
+</ParamField>
+
+<ParamField path="config" type="UserRatingsOptions">
+  Configuration for filtering and pagination
+  
+  <Expandable title="properties">
+    <ParamField path="page" type="number">
+      Fetch specific page number (default: `1`). Each page contains approximately 50 ratings.
+    </ParamField>
+    
+    <ParamField path="allPages" type="boolean">
+      Fetch all pages of ratings. Use with caution - can trigger rate limiting. Default: `false`
+    </ParamField>
+    
+    <ParamField path="allPagesDelay" type="number">
+      Delay between page requests in milliseconds when `allPages` is `true`. Recommended: `2000` or higher. Default: `0`
+    </ParamField>
+    
+    <ParamField path="includesOnly" type="CSFDFilmTypes[]">
+      Include only specific content types (e.g., `['film', 'series']`). Mutually exclusive with `exclude`.
+    </ParamField>
+    
+    <ParamField path="exclude" type="CSFDFilmTypes[]">
+      Exclude specific content types (e.g., `['episode', 'season']`). Mutually exclusive with `includesOnly`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="options" type="CSFDOptions">
+  Optional request configuration
+  
+  <Expandable title="properties">
+    <ParamField path="language" type="'cs' | 'en' | 'sk'">
+      Language variant. Defaults to `'cs'`
+    </ParamField>
+    
+    <ParamField path="request" type="object">
+      Custom request options
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return Type
+
+<ResponseField name="CSFDUserRatings[]" type="array">
+  Array of user rating objects
+  
+  <Expandable title="item properties">
+    <ResponseField name="id" type="number">
+      Movie/show ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string">
+      Movie/show title
+    </ResponseField>
+    
+    <ResponseField name="year" type="number">
+      Release year
+    </ResponseField>
+    
+    <ResponseField name="type" type="CSFDFilmTypes">
+      Content type: `'film'`, `'series'`, `'episode'`, `'season'`, `'tv-film'`, etc.
+    </ResponseField>
+    
+    <ResponseField name="url" type="string">
+      Full URL to the content on ČSFD
+    </ResponseField>
+    
+    <ResponseField name="colorRating" type="'bad' | 'average' | 'good' | 'unknown'">
+      Overall ČSFD rating quality
+    </ResponseField>
+    
+    <ResponseField name="userDate" type="string">
+      Date when user rated the content (format: "DD.MM.YYYY")
+    </ResponseField>
+    
+    <ResponseField name="userRating" type="0 | 1 | 2 | 3 | 4 | 5">
+      User's rating (0-5 stars)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Usage Examples
+
+<Tabs>
+  <Tab title="Basic Usage">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Get latest page of ratings (~50 items)
+    const ratings = await csfd.userRatings('912-bart');
+    
+    ratings.forEach(rating => {
+      console.log(`${rating.title} (${rating.year}): ${rating.userRating}/5`);
+    });
+    ```
+  </Tab>
+  
+  <Tab title="Specific Page">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Get page 2 of ratings
+    const page2 = await csfd.userRatings('912-bart', { page: 2 });
+    
+    console.log(`Fetched ${page2.length} ratings from page 2`);
+    ```
+  </Tab>
+  
+  <Tab title="All Pages (Rate Limited)">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Fetch ALL ratings with 2-second delay between requests
+    const allRatings = await csfd.userRatings('912-bart', {
+      allPages: true,
+      allPagesDelay: 2000 // 2 seconds
+    });
+    
+    console.log(`Total ratings: ${allRatings.length}`);
+    ```
+  </Tab>
+  
+  <Tab title="Filter by Type">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    // Get only movies (exclude TV content)
+    const onlyMovies = await csfd.userRatings('912-bart', {
+      includesOnly: ['film']
+    });
+    
+    // Exclude episodes and seasons
+    const noEpisodes = await csfd.userRatings('912-bart', {
+      exclude: ['episode', 'season']
+    });
+    ```
+  </Tab>
+  
+  <Tab title="Analyze Ratings">
+    ```typescript
+    import { csfd } from 'node-csfd-api';
+
+    const ratings = await csfd.userRatings('912-bart');
+    
+    // Calculate average rating
+    const avgRating = ratings.reduce(
+      (sum, r) => sum + r.userRating, 0
+    ) / ratings.length;
+    
+    console.log(`Average rating: ${avgRating.toFixed(2)}/5`);
+    
+    // Count 5-star ratings
+    const fiveStars = ratings.filter(r => r.userRating === 5).length;
+    console.log(`5-star ratings: ${fiveStars}`);
+    ```
+  </Tab>
+</Tabs>
+
+<Accordion title="Example Response">
+```json
+[
+  {
+    "id": 812944,
+    "title": "David Attenborough: Život na naší planetě",
+    "year": 2020,
+    "type": "film",
+    "url": "https://www.csfd.cz/film/812944-david-attenborough-zivot-na-nasi-planete/",
+    "colorRating": "good",
+    "userDate": "01.11.2020",
+    "userRating": 5
+  },
+  {
+    "id": 912552,
+    "title": "Coronation",
+    "year": 2020,
+    "type": "film",
+    "url": "https://www.csfd.cz/film/912552-coronation/",
+    "colorRating": "good",
+    "userDate": "28.10.2020",
+    "userRating": 4
+  }
+]
+```
+</Accordion>
+
+## Content Type Filtering
+
+You can filter ratings by content type using `includesOnly` or `exclude`:
+
+### Available Content Types
+
+- `'film'` - Feature films
+- `'series'` - TV series
+- `'season'` - Individual seasons
+- `'episode'` - Individual episodes
+- `'tv-film'` - TV movies
+- `'tv-show'` - TV shows
+- `'theatrical'` - Theatrical productions
+- `'concert'` - Concert recordings
+- `'student-film'` - Student films
+- `'amateur-film'` - Amateur films
+- `'music-video'` - Music videos
+
+<Note>
+`includesOnly` and `exclude` are mutually exclusive. If both are provided, `includesOnly` takes precedence.
+</Note>
+
+<Warning>
+**Rate Limiting:** When using `allPages: true`, always set an appropriate `allPagesDelay` (recommended: 2000ms or higher) to avoid being detected and blocked by ČSFD. Consider implementing exponential backoff for large datasets.
+</Warning>
+
+<Tip>
+For exporting user ratings to CSV or JSON, use the built-in CLI tool:
+```bash
+npx node-csfd-api export ratings 912-bart
+```
+</Tip>

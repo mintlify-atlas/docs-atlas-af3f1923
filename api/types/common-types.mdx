@@ -1,0 +1,295 @@
+---
+title: 'Common Types'
+description: 'Shared TypeScript types and interfaces used across the ČSFD API'
+---
+
+## Overview
+
+The common types module contains shared TypeScript interfaces and types that are used across multiple parts of the API, including base screening data, film types, ratings, and cinema information.
+
+## CSFDScreening
+
+The base interface for any film or TV show representation. Most movie-related interfaces extend this.
+
+<ResponseField name="CSFDScreening" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD movie/show ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string" required>
+      Title of the film or show
+    </ResponseField>
+    
+    <ResponseField name="year" type="number" required>
+      Release year
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Full ČSFD URL to the page
+    </ResponseField>
+    
+    <ResponseField name="type" type="CSFDFilmTypes" required>
+      Type of content (film, series, tv-show, etc.)
+    </ResponseField>
+    
+    <ResponseField name="colorRating" type="CSFDColorRating" required>
+      Overall aggregated rating represented by color
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+  Many interfaces in the API extend `CSFDScreening` and add additional properties. For example: `CSFDMovie`, `CSFDSearchMovie`, `CSFDUserRatings`, etc.
+</Note>
+
+## Type Definitions
+
+### CSFDColorRating
+
+Color-based rating system used throughout ČSFD:
+
+```typescript
+type CSFDColorRating = 'bad' | 'average' | 'good' | 'unknown';
+```
+
+**Rating ranges:**
+- `bad`: 0% - 29% (black color on ČSFD)
+- `average`: 30% - 69% (blue color on ČSFD)
+- `good`: 70% - 100% (red color on ČSFD)
+- `unknown`: Not enough ratings (gray color on ČSFD)
+
+### CSFDStars
+
+User star ratings:
+
+```typescript
+type CSFDStars = 0 | 1 | 2 | 3 | 4 | 5;
+```
+
+### CSFDFilmTypes
+
+All possible content types on ČSFD:
+
+```typescript
+type CSFDFilmTypes =
+  | 'film'
+  | 'tv-film'
+  | 'tv-show'
+  | 'series'
+  | 'theatrical'
+  | 'concert'
+  | 'season'
+  | 'student-film'
+  | 'amateur-film'
+  | 'music-video'
+  | 'episode'
+  | 'video-compilation';
+```
+
+## Cinema Types
+
+Types related to cinema showtimes and screenings.
+
+### CSFDCinema
+
+Represents a cinema with its current screenings.
+
+<ResponseField name="CSFDCinema" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD cinema ID
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      Cinema name
+    </ResponseField>
+    
+    <ResponseField name="city" type="string" required>
+      City where the cinema is located
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Full URL to cinema page
+    </ResponseField>
+    
+    <ResponseField name="coords" type="object" required>
+      Geographic coordinates with `lat` and `lng` numbers
+    </ResponseField>
+    
+    <ResponseField name="region" type="string">
+      Region (optional)
+    </ResponseField>
+    
+    <ResponseField name="screenings" type="CSFDCinemaGroupedFilmsByDate[]" required>
+      Films grouped by date
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### CSFDCinemaGroupedFilmsByDate
+
+Groups films by screening date.
+
+<ResponseField name="CSFDCinemaGroupedFilmsByDate" type="object">
+  <Expandable title="properties">
+    <ResponseField name="date" type="string" required>
+      Screening date
+    </ResponseField>
+    
+    <ResponseField name="films" type="CSFDCinemaMovie[]" required>
+      Films showing on this date
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### CSFDCinemaMovie
+
+Represents a movie screening at a cinema.
+
+<ResponseField name="CSFDCinemaMovie" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="number" required>
+      ČSFD movie ID
+    </ResponseField>
+    
+    <ResponseField name="title" type="string" required>
+      Movie title
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Full URL to movie page
+    </ResponseField>
+    
+    <ResponseField name="meta" type="CSFDCinemaMeta[]" required>
+      Screening metadata (dubbing, 3D, subtitles, etc.)
+    </ResponseField>
+    
+    <ResponseField name="showTimes" type="string[]" required>
+      Array of screening times
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### CSFDCinemaMeta
+
+Metadata tags for cinema screenings:
+
+```typescript
+type CSFDCinemaMeta = 'dubbing' | '3D' | 'subtitles' | string;
+```
+
+### CSFDCinemaPeriod
+
+Time periods for cinema listings:
+
+```typescript
+type CSFDCinemaPeriod = 'today' | 'weekend' | 'week' | 'tomorrow' | 'month';
+```
+
+## Import Example
+
+```typescript
+import type {
+  CSFDScreening,
+  CSFDColorRating,
+  CSFDStars,
+  CSFDFilmTypes,
+  CSFDCinema,
+  CSFDCinemaGroupedFilmsByDate,
+  CSFDCinemaMovie,
+  CSFDCinemaMeta,
+  CSFDCinemaPeriod,
+} from 'node-csfd-api';
+```
+
+## TypeScript Interface
+
+```typescript
+export interface CSFDScreening {
+  id: number;
+  title: string;
+  year: number;
+  url: string;
+  type: CSFDFilmTypes;
+  colorRating: CSFDColorRating;
+}
+
+export type CSFDColorRating = 'bad' | 'average' | 'good' | 'unknown';
+
+export type CSFDStars = 0 | 1 | 2 | 3 | 4 | 5;
+
+export type CSFDFilmTypes =
+  | 'film'
+  | 'tv-film'
+  | 'tv-show'
+  | 'series'
+  | 'theatrical'
+  | 'concert'
+  | 'season'
+  | 'student-film'
+  | 'amateur-film'
+  | 'music-video'
+  | 'episode'
+  | 'video-compilation';
+
+export interface CSFDCinema {
+  id: number;
+  name: string;
+  city: string;
+  url: string;
+  coords: { lat: number; lng: number };
+  region?: string;
+  screenings: CSFDCinemaGroupedFilmsByDate[];
+}
+
+export interface CSFDCinemaGroupedFilmsByDate {
+  date: string;
+  films: CSFDCinemaMovie[];
+}
+
+export interface CSFDCinemaMovie extends CSFDMovieListItem {
+  meta: CSFDCinemaMeta[];
+  showTimes: string[];
+}
+
+export type CSFDCinemaMeta = 'dubbing' | '3D' | 'subtitles' | string;
+
+export type CSFDCinemaPeriod = 'today' | 'weekend' | 'week' | 'tomorrow' | 'month';
+```
+
+## Usage Example
+
+```typescript
+import { CSFD } from 'node-csfd-api';
+import type { CSFDFilmTypes, CSFDColorRating } from 'node-csfd-api';
+
+const csfd = new CSFD();
+
+// Filter by film type
+const filterByType = (type: CSFDFilmTypes) => {
+  // Your filtering logic
+};
+
+// Get cinema screenings
+const cinema = await csfd.cinema(123, 'today');
+
+console.log(`${cinema.name} in ${cinema.city}`);
+console.log(`Location: ${cinema.coords.lat}, ${cinema.coords.lng}`);
+
+cinema.screenings.forEach((day) => {
+  console.log(`\nDate: ${day.date}`);
+  day.films.forEach((film) => {
+    console.log(`  ${film.title}`);
+    console.log(`  Meta: ${film.meta.join(', ')}`);
+    console.log(`  Times: ${film.showTimes.join(', ')}`);
+  });
+});
+```
+
+## Related Types
+
+- [Movie Types](/api/types/movie-types) - Extended movie interfaces
+- [Search Types](/api/types/search-types) - Search-specific interfaces
+- [User Types](/api/types/user-types) - User ratings and reviews
+- [Creator Types](/api/types/creator-types) - Creator profiles

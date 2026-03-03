@@ -1,0 +1,402 @@
+---
+title: 'Claude Desktop Integration'
+description: 'How to use ČSFD data within Claude Desktop via MCP'
+---
+
+Claude Desktop can access ČSFD data directly through the MCP (Model Context Protocol) server. This guide shows you how to configure and use the integration.
+
+## Prerequisites
+
+- [Claude Desktop](https://claude.ai/download) installed
+- Node.js 18+ installed
+- Basic familiarity with JSON configuration files
+
+## Configuration
+
+<Steps>
+  <Step title="Locate the config file">
+    Find your Claude Desktop configuration file:
+    
+    **macOS:**
+    ```bash
+    ~/Library/Application Support/Claude/claude_desktop_config.json
+    ```
+    
+    **Windows:**
+    ```bash
+    %APPDATA%/Claude/claude_desktop_config.json
+    ```
+    
+    **Linux:**
+    ```bash
+    ~/.config/Claude/claude_desktop_config.json
+    ```
+  </Step>
+  
+  <Step title="Edit the configuration">
+    Add the ČSFD MCP server to the `mcpServers` section:
+    
+    ```json
+    {
+      "mcpServers": {
+        "csfd": {
+          "command": "npx",
+          "args": ["-y", "node-csfd-api", "mcp"]
+        }
+      }
+    }
+    ```
+    
+    If you already have other MCP servers configured, add the `csfd` entry to the existing `mcpServers` object.
+  </Step>
+  
+  <Step title="Restart Claude Desktop">
+    Close and reopen Claude Desktop for the changes to take effect.
+  </Step>
+  
+  <Step title="Verify the integration">
+    Check if Claude can see the ČSFD tools by asking:
+    
+    ```
+    What tools do you have access to?
+    ```
+    
+    Claude should list the ČSFD tools including `search`, `get_movie`, `get_creator`, etc.
+  </Step>
+</Steps>
+
+## Complete Configuration Example
+
+Here's a full example of `claude_desktop_config.json` with the ČSFD server:
+
+```json
+{
+  "mcpServers": {
+    "csfd": {
+      "command": "npx",
+      "args": ["-y", "node-csfd-api", "mcp"]
+    }
+  }
+}
+```
+
+With multiple MCP servers:
+
+```json
+{
+  "mcpServers": {
+    "csfd": {
+      "command": "npx",
+      "args": ["-y", "node-csfd-api", "mcp"]
+    },
+    "other-server": {
+      "command": "node",
+      "args": ["/path/to/other/server.js"]
+    }
+  }
+}
+```
+
+## Alternative Configuration (Local Build)
+
+If you've cloned the repository and built it locally:
+
+```json
+{
+  "mcpServers": {
+    "csfd-local": {
+      "command": "node",
+      "args": ["/absolute/path/to/node-csfd-api/dist/bin/mcp-server.js"]
+    }
+  }
+}
+```
+
+<Note>
+  Using npx is recommended as it always pulls the latest version and doesn't require manual installation.
+</Note>
+
+## Using ČSFD Data in Claude
+
+Once configured, you can ask Claude to interact with ČSFD data naturally. Here are some example queries:
+
+### Example Queries
+
+<AccordionGroup>
+  <Accordion title="Search for movies">
+    **Query:**
+    ```
+    Search for "Pulp Fiction" on ČSFD and show me the rating
+    ```
+    
+    **What happens:**
+    1. Claude uses the `search` tool to find the movie
+    2. Extracts the ID from search results
+    3. Uses `get_movie` tool to get detailed information
+    4. Presents the rating and other details
+  </Accordion>
+  
+  <Accordion title="Get creator information">
+    **Query:**
+    ```
+    Tell me about Quentin Tarantino's filmography on ČSFD
+    ```
+    
+    **What happens:**
+    1. Claude uses `search` to find Quentin Tarantino
+    2. Uses `get_creator` with his ID
+    3. Presents his biography and list of films with ratings
+  </Accordion>
+  
+  <Accordion title="Find top-rated films">
+    **Query:**
+    ```
+    Find Christopher Nolan's top 5 highest-rated movies on ČSFD
+    ```
+    
+    **What happens:**
+    1. Searches for Christopher Nolan
+    2. Gets his creator profile with filmography
+    3. Sorts films by rating
+    4. Returns top 5 with titles, years, and ratings
+  </Accordion>
+  
+  <Accordion title="Compare user ratings">
+    **Query:**
+    ```
+    What are the latest movie ratings from ČSFD user 912?
+    ```
+    
+    **What happens:**
+    1. Uses `get_user_ratings` with user ID 912
+    2. Retrieves recent ratings
+    3. Presents a list of rated movies with scores
+  </Accordion>
+  
+  <Accordion title="Analyze reviews">
+    **Query:**
+    ```
+    Show me reviews from user 195357-verbal and summarize their taste
+    ```
+    
+    **What happens:**
+    1. Uses `get_user_reviews` to fetch reviews
+    2. Analyzes review text and ratings
+    3. Provides insights about the user's preferences
+  </Accordion>
+  
+  <Accordion title="Cinema screenings">
+    **Query:**
+    ```
+    What movies are playing in Prague today?
+    ```
+    
+    **What happens:**
+    1. Uses `get_cinemas` with district "Praha" and period "today"
+    2. Returns list of cinemas and their current screenings
+    3. Includes showtimes and movie details
+  </Accordion>
+</AccordionGroup>
+
+## Advanced Workflows
+
+### Multi-step Analysis
+
+Claude can chain multiple tools together for complex queries:
+
+**Query:**
+```
+Find movies directed by Denis Villeneuve, show their ČSFD ratings, 
+and tell me which one is most popular among Czech audiences.
+```
+
+**Claude's approach:**
+1. Uses `search` to find Denis Villeneuve
+2. Uses `get_creator` to get his filmography
+3. For each film, potentially uses `get_movie` to get detailed ratings
+4. Compares ratings and vote counts
+5. Provides analysis of the most popular film
+
+### Comparative Analysis
+
+**Query:**
+```
+Compare the ratings of all Quentin Tarantino films on ČSFD 
+and identify his most and least appreciated works.
+```
+
+**Claude's approach:**
+1. Searches for Tarantino
+2. Gets his complete filmography
+3. Analyzes rating distribution
+4. Identifies top and bottom rated films
+5. Provides insights about reception trends
+
+### User Preference Matching
+
+**Query:**
+```
+Look at user 912's ratings and recommend similar movies they haven't rated yet.
+```
+
+**Claude's approach:**
+1. Gets user ratings with `get_user_ratings`
+2. Identifies patterns (genres, directors, themes)
+3. Searches for similar content
+4. Cross-references to avoid duplicates
+5. Provides personalized recommendations
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Start with search">
+    Always begin by searching for content rather than guessing IDs:
+    
+    ```
+    First search for "Inception" to get its ID, then show me the details
+    ```
+  </Accordion>
+  
+  <Accordion title="Be specific with requests">
+    Provide context to help Claude choose the right tools:
+    
+    ```
+    Get the ČSFD rating for the 2010 sci-fi film Inception directed by Christopher Nolan
+    ```
+  </Accordion>
+  
+  <Accordion title="Request summaries for large data">
+    When fetching many results, ask for summaries:
+    
+    ```
+    Get user 912's ratings and summarize their top 10 favorite films
+    ```
+  </Accordion>
+  
+  <Accordion title="Use filters when available">
+    Take advantage of filtering parameters:
+    
+    ```
+    Get user ratings for ID 912, but only include films (exclude TV series and episodes)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Limitations and Considerations
+
+<Warning>
+  The ČSFD MCP server scrapes live data from ČSFD.cz. Be respectful:
+  - Avoid excessive requests in short time periods
+  - Don't use `allPages: true` for users with thousands of ratings
+  - Consider caching results for repeated queries
+</Warning>
+
+### Known Limitations
+
+- **Rate limiting:** ČSFD may block excessive requests
+- **Data freshness:** Data is scraped in real-time, so responses may be slower than APIs
+- **Czech content focus:** ČSFD is primarily focused on Czech/Slovak film database
+- **No write operations:** The tools are read-only (search and retrieve only)
+
+### Performance Tips
+
+1. **Use specific queries** - "Get movie ID 535121" is faster than "Search for movies about..." then getting details
+2. **Limit pagination** - Fetch specific pages instead of using `allPages`
+3. **Add delays** - When fetching multiple pages, use `allPagesDelay: 2000`
+4. **Cache results** - If you need to reference the same data multiple times, ask Claude to remember it in context
+
+## Troubleshooting
+
+### Claude doesn't see the tools
+
+**Problem:** Claude responds "I don't have access to ČSFD data"
+
+**Solutions:**
+1. Verify the config file path is correct
+2. Check JSON syntax (use a JSON validator)
+3. Restart Claude Desktop
+4. Check if Node.js is in your PATH: `node --version`
+
+### Tools return errors
+
+**Problem:** Claude shows tool execution errors
+
+**Solutions:**
+1. Verify internet connection
+2. Check if ČSFD.cz is accessible from your location
+3. Try with a different search query or ID
+4. Look at Claude's detailed error message for specific issues
+
+### Slow responses
+
+**Problem:** Queries take a long time to complete
+
+**Solutions:**
+1. This is normal for scraping - data is fetched in real-time
+2. Avoid using `allPages` parameter
+3. Be more specific with queries to reduce tool calls
+4. Check your internet connection speed
+
+### "Command not found" error
+
+**Problem:** Claude shows npx or node command not found
+
+**Solutions:**
+1. Ensure Node.js is installed: `node --version`
+2. Add Node.js to your system PATH
+3. Use absolute path to node in config:
+   ```json
+   {
+     "command": "/usr/local/bin/node",
+     "args": ["/usr/local/bin/npx", "-y", "node-csfd-api", "mcp"]
+   }
+   ```
+
+## Example Conversations
+
+### Movie Discovery
+
+**User:** "What's the highest-rated sci-fi movie from 2010 on ČSFD?"
+
+**Claude:** *[Uses search and get_movie tools]* "Based on ČSFD data, 'Inception' (2010) directed by Christopher Nolan has a rating of 86% with over 100,000 votes, making it one of the highest-rated sci-fi films from that year."
+
+### Director Analysis
+
+**User:** "How do Wes Anderson's films perform on ČSFD?"
+
+**Claude:** *[Searches for Wes Anderson, gets creator details]* "Wes Anderson's films are highly regarded on ČSFD. His top-rated works include:
+1. Grand Budapest Hotel (2014) - 78%
+2. Moonrise Kingdom (2012) - 75%
+3. The Royal Tenenbaums (2001) - 73%
+His distinctive visual style appears to resonate well with Czech audiences."
+
+### User Profile Analysis
+
+**User:** "Analyze the movie taste of ČSFD user 912"
+
+**Claude:** *[Gets user ratings and reviews]* "User 912 (BART!) shows a preference for:
+- Critically acclaimed dramas and thrillers
+- International cinema beyond Hollywood
+- Documentaries about nature and society
+- Average rating given: 3.8/5 stars
+They tend to appreciate thoughtful, well-crafted films over mainstream blockbusters."
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Available Tools" icon="wrench" href="/api/mcp/tools">
+    Learn about all MCP tools in detail
+  </Card>
+  
+  <Card title="MCP Server Setup" icon="server" href="/api/mcp/setup">
+    Advanced server configuration
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="/api/reference">
+    Full API documentation
+  </Card>
+  
+  <Card title="GitHub" icon="github" href="https://github.com/bartholomej/node-csfd-api">
+    View source and contribute
+  </Card>
+</CardGroup>
